@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import {
+  MARGIN_DEFAULT,
+  MARGIN_MAX,
+  MARGIN_MIN,
+  alphaCoverage,
+  clampMargin,
+  isNearEmpty,
+} from "../lib/compose";
+
 type Preset = {
   id: string;
   label: string;
@@ -37,7 +46,7 @@ const PREVIEW_MAX = 480; // small preview canvas: fast + avoids mobile canvas li
 
 type Phase = "idle" | "downloading" | "removing";
 
-type ItemStatus = "waiting" | "processing" | "done" | "error";
+type ItemStatus = "waiting" | "processing" | "done" | "check" | "error";
 
 type QueueItem = {
   id: string;
@@ -125,7 +134,8 @@ function canvasToBlob(
 async function compositeWhite(
   cutoutUrl: string,
   targetW: number,
-  targetH: number
+  targetH: number,
+  marginPct: number
 ): Promise<Blob> {
   const img = await loadImage(cutoutUrl);
   const src = document.createElement("canvas");
@@ -142,7 +152,7 @@ async function compositeWhite(
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, targetW, targetH);
 
-  const margin = 0.06; // 6% white border around the subject
+  const margin = clampMargin(marginPct) / 100; // white border around the subject
   const boxW = targetW * (1 - margin * 2);
   const boxH = targetH * (1 - margin * 2);
   const scale = Math.min(boxW / b.w, boxH / b.h);
@@ -163,6 +173,20 @@ async function compositeWhite(
   return canvasToBlob(out, "image/jpeg", 0.92);
 }
 
+/** Decode a cutout and measure how much of it is actually opaque (0–1). */
+async function cutoutCoverage(cutoutUrl: string): Promise<number> {
+  const img = await loadImage(cutoutUrl);
+  const scale = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight));
+  const w = Math.max(1, Math.round(img.naturalWidth * scale));
+  const h = Math.max(1, Math.round(img.naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(img, 0, 0, w, h);
+  return alphaCoverage(ctx.getImageData(0, 0, w, h).data);
+}
+
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -178,6 +202,24 @@ function downloadBlob(blob: Blob, filename: string) {
  * Touch-up editor: erase/restore brush over the cutout, faint original below.
  * ------------------------------------------------------------------------- */
 
+type EditorView = { scale: number; tx: number; ty: number };
+
+/** Keep the zoomed content covering the viewport (no blank gutters). */
+function clampView(v: EditorView, w: number, h: number): EditorView {
+  const scale = Math.min(8, Math.max(1, v.scale));
+  return {
+    scale,
+    tx: Math.min(0, Math.max(w * (1 - scale), v.tx)),
+    ty: Math.min(0, Math.max(h * (1 - scale), v.ty)),
+  };
+}
+
+const EDITOR_BG: Record<"checker" | "white" | "dark", React.CSSProperties> = {
+  checker: CHECKERBOARD,
+  white: { backgroundColor: "#ffffff" },
+  dark: { backgroundColor: "#0f172a" },
+};
+
 function TouchUpEditor({
   cutoutUrl,
   originalUrl,
@@ -190,13 +232,27 @@ function TouchUpEditor({
   onCancel: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const originalImgRef = useRef<HTMLImageElement | null>(null);
   const maskRef = useRef<HTMLCanvasElement | null>(null);
   const undoStack = useRef<HTMLCanvasElement[]>([]);
   const drawing = useRef(false);
   const lastPt = useRef<{ x: number; y: number } | null>(null);
-  const [tool, setTool] = useState<"erase" | "restore">("erase");
+  const pointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const panning = useRef(false);
+  const lastPan = useRef<{ x: number; y: number } | null>(null);
+  const pinchStart = useRef<{
+    dist: number;
+    midX: number;
+    midY: number;
+    view: { scale: number; tx: number; ty: number };
+  } | null>(null);
+  const [tool, setTool] = useState<"erase" | "restore" | "pan">("erase");
   const [brush, setBrush] = useState(28);
+  const [view, setView] = useState({ scale: 1, tx: 0, ty: 0 });
+  const [previewBg, setPreviewBg] = useState<"checker" | "white" | "dark">(
+    "checker"
+  );
   const [ready, setReady] = useState(false);
   const [canUndo, setCanUndo] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -245,20 +301,28 @@ function TouchUpEditor({
     ) => {
       const canvas = canvasRef.current!;
       const ctx = canvas.getContext("2d")!;
-      const strokePath = (c: CanvasRenderingContext2D) => {
-        c.lineCap = "round";
-        c.lineJoin = "round";
-        c.lineWidth = brushPx;
-        c.beginPath();
-        c.moveTo(a.x, a.y);
-        c.lineTo(b.x + 0.01, b.y + 0.01); // ensure dots render
-        c.stroke();
+      // Feathered brush: radial-gradient stamps along the segment so strokes
+      // blend softly instead of leaving hard scalloped edges.
+      const stampPath = (c: CanvasRenderingContext2D) => {
+        const r = Math.max(1, brushPx / 2);
+        const dist = Math.hypot(b.x - a.x, b.y - a.y);
+        const steps = Math.max(1, Math.ceil(dist / Math.max(1, r / 3)));
+        for (let i = 0; i <= steps; i++) {
+          const x = a.x + ((b.x - a.x) * i) / steps;
+          const y = a.y + ((b.y - a.y) * i) / steps;
+          const g = c.createRadialGradient(x, y, r * 0.45, x, y, r);
+          g.addColorStop(0, "rgba(0,0,0,1)");
+          g.addColorStop(1, "rgba(0,0,0,0)");
+          c.fillStyle = g;
+          c.beginPath();
+          c.arc(x, y, r, 0, Math.PI * 2);
+          c.fill();
+        }
       };
       if (tool === "erase") {
         ctx.save();
         ctx.globalCompositeOperation = "destination-out";
-        ctx.strokeStyle = "rgba(0,0,0,1)";
-        strokePath(ctx);
+        stampPath(ctx);
         ctx.restore();
       } else {
         const mask = maskRef.current!;
@@ -266,8 +330,7 @@ function TouchUpEditor({
         mctx.save();
         mctx.globalCompositeOperation = "source-over";
         mctx.clearRect(0, 0, mask.width, mask.height);
-        mctx.strokeStyle = "#fff";
-        strokePath(mctx);
+        stampPath(mctx);
         mctx.globalCompositeOperation = "source-in";
         mctx.drawImage(originalImgRef.current!, 0, 0, mask.width, mask.height);
         mctx.restore();
@@ -279,6 +342,29 @@ function TouchUpEditor({
     },
     [tool]
   );
+
+  // Scroll-wheel zoom (native non-passive listener so preventDefault works).
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const px = e.clientX - rect.left;
+      const py = e.clientY - rect.top;
+      setView((v) => {
+        const scale = Math.min(8, Math.max(1, v.scale * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+        const k = scale / v.scale;
+        return clampView(
+          { scale, tx: px - k * (px - v.tx), ty: py - k * (py - v.ty) },
+          rect.width,
+          rect.height
+        );
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [loadError]);
 
   const pushUndo = useCallback(() => {
     const canvas = canvasRef.current!;
@@ -325,7 +411,7 @@ function TouchUpEditor({
 
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <div className="flex rounded-lg border border-slate-300 p-0.5" role="radiogroup" aria-label="Touch-up tool">
-          {(["erase", "restore"] as const).map((t) => (
+          {(["erase", "restore", "pan"] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -359,6 +445,44 @@ function TouchUpEditor({
         >
           Undo
         </button>
+        {view.scale > 1.01 ? (
+          <button
+            type="button"
+            onClick={() => setView({ scale: 1, tx: 0, ty: 0 })}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            Reset zoom ({Math.round(view.scale * 100)}%)
+          </button>
+        ) : null}
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-slate-600">
+        <span>Preview background</span>
+        <div
+          className="flex rounded-lg border border-slate-300 p-0.5"
+          role="radiogroup"
+          aria-label="Preview background"
+        >
+          {(["checker", "white", "dark"] as const).map((bg) => (
+            <button
+              key={bg}
+              type="button"
+              role="radio"
+              aria-checked={previewBg === bg}
+              onClick={() => setPreviewBg(bg)}
+              className={`rounded-md px-3 py-1 text-xs font-semibold capitalize ${
+                previewBg === bg
+                  ? "bg-slate-700 text-white"
+                  : "text-slate-600 hover:bg-slate-50"
+              }`}
+            >
+              {bg}
+            </button>
+          ))}
+        </div>
+        <span className="text-xs text-slate-500">
+          Scroll or pinch to zoom · use Pan to move around
+        </span>
       </div>
 
       {loadError ? (
@@ -366,41 +490,142 @@ function TouchUpEditor({
           Couldn’t open the editor for this photo.
         </p>
       ) : (
-        <div className="relative mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={originalUrl}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-fill opacity-25"
-          />
-          <canvas
-            ref={canvasRef}
-            className="relative block h-auto w-full cursor-crosshair touch-none"
-            onPointerDown={(e) => {
-              if (!ready) return;
-              e.currentTarget.setPointerCapture(e.pointerId);
-              pushUndo();
-              drawing.current = true;
-              const pt = toCanvasPt(e);
-              lastPt.current = pt;
-              applySegment(pt, pt, brush * pt.scale);
+        <div
+          ref={containerRef}
+          className="relative mt-4 overflow-hidden rounded-lg border border-slate-200"
+          style={EDITOR_BG[previewBg]}
+        >
+          <div
+            style={{
+              transform: `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`,
+              transformOrigin: "0 0",
             }}
-            onPointerMove={(e) => {
-              if (!drawing.current || !lastPt.current) return;
-              const pt = toCanvasPt(e);
-              applySegment(lastPt.current, pt, brush * pt.scale);
-              lastPt.current = pt;
-            }}
-            onPointerUp={() => {
-              drawing.current = false;
-              lastPt.current = null;
-            }}
-            onPointerCancel={() => {
-              drawing.current = false;
-              lastPt.current = null;
-            }}
-          />
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={originalUrl}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-fill opacity-25"
+            />
+            <canvas
+              ref={canvasRef}
+              className={`relative block h-auto w-full touch-none ${
+                tool === "pan" ? "cursor-grab" : "cursor-crosshair"
+              }`}
+              onPointerDown={(e) => {
+                if (!ready) return;
+                e.currentTarget.setPointerCapture(e.pointerId);
+                pointers.current.set(e.pointerId, {
+                  x: e.clientX,
+                  y: e.clientY,
+                });
+                if (pointers.current.size === 2) {
+                  // Second finger: switch from drawing to pinch-zoom.
+                  drawing.current = false;
+                  lastPt.current = null;
+                  panning.current = false;
+                  const pts = [...pointers.current.values()];
+                  const rect = containerRef.current!.getBoundingClientRect();
+                  pinchStart.current = {
+                    dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y),
+                    midX: (pts[0].x + pts[1].x) / 2 - rect.left,
+                    midY: (pts[0].y + pts[1].y) / 2 - rect.top,
+                    view,
+                  };
+                  return;
+                }
+                if (tool === "pan") {
+                  panning.current = true;
+                  lastPan.current = { x: e.clientX, y: e.clientY };
+                  return;
+                }
+                pushUndo();
+                drawing.current = true;
+                const pt = toCanvasPt(e);
+                lastPt.current = pt;
+                applySegment(pt, pt, brush * pt.scale);
+              }}
+              onPointerMove={(e) => {
+                if (pointers.current.has(e.pointerId)) {
+                  pointers.current.set(e.pointerId, {
+                    x: e.clientX,
+                    y: e.clientY,
+                  });
+                }
+                if (pinchStart.current && pointers.current.size >= 2) {
+                  const pts = [...pointers.current.values()];
+                  const rect = containerRef.current!.getBoundingClientRect();
+                  const start = pinchStart.current;
+                  const dist = Math.hypot(
+                    pts[0].x - pts[1].x,
+                    pts[0].y - pts[1].y
+                  );
+                  const midX = (pts[0].x + pts[1].x) / 2 - rect.left;
+                  const midY = (pts[0].y + pts[1].y) / 2 - rect.top;
+                  const scale = Math.min(
+                    8,
+                    Math.max(
+                      1,
+                      start.view.scale * (dist / Math.max(1, start.dist))
+                    )
+                  );
+                  setView(
+                    clampView(
+                      {
+                        scale,
+                        tx:
+                          midX -
+                          ((start.midX - start.view.tx) / start.view.scale) *
+                            scale,
+                        ty:
+                          midY -
+                          ((start.midY - start.view.ty) / start.view.scale) *
+                            scale,
+                      },
+                      rect.width,
+                      rect.height
+                    )
+                  );
+                  return;
+                }
+                if (panning.current && lastPan.current) {
+                  const dx = e.clientX - lastPan.current.x;
+                  const dy = e.clientY - lastPan.current.y;
+                  lastPan.current = { x: e.clientX, y: e.clientY };
+                  const rect = containerRef.current!.getBoundingClientRect();
+                  setView((v) =>
+                    clampView(
+                      { ...v, tx: v.tx + dx, ty: v.ty + dy },
+                      rect.width,
+                      rect.height
+                    )
+                  );
+                  return;
+                }
+                if (!drawing.current || !lastPt.current) return;
+                const pt = toCanvasPt(e);
+                applySegment(lastPt.current, pt, brush * pt.scale);
+                lastPt.current = pt;
+              }}
+              onPointerUp={(e) => {
+                pointers.current.delete(e.pointerId);
+                if (pointers.current.size < 2) pinchStart.current = null;
+                drawing.current = false;
+                lastPt.current = null;
+                panning.current = false;
+                lastPan.current = null;
+              }}
+              onPointerCancel={(e) => {
+                pointers.current.delete(e.pointerId);
+                if (pointers.current.size < 2) pinchStart.current = null;
+                drawing.current = false;
+                lastPt.current = null;
+                panning.current = false;
+                lastPan.current = null;
+              }}
+            />
+          </div>
         </div>
       )}
 
@@ -439,6 +664,7 @@ export default function Home() {
   const [presetId, setPresetId] = useState("ebay"); // sticky across photos + start over
   const [customW, setCustomW] = useState("2000");
   const [customH, setCustomH] = useState("2000");
+  const [marginPct, setMarginPct] = useState(MARGIN_DEFAULT); // sticky like the preset
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -459,6 +685,11 @@ export default function Home() {
     preset.id === "custom" ? `Custom ${dims.w}×${dims.h}` : preset.chip;
   const selected = items.find((i) => i.id === selectedId) ?? null;
   const doneItems = items.filter((i) => i.status === "done");
+  // "check" items have a result too — viewable, editable, downloadable one-off.
+  const readyItems = items.filter(
+    (i) => i.status === "done" || i.status === "check"
+  );
+  const checkItems = items.filter((i) => i.status === "check");
   const anyProcessing = items.some(
     (i) => i.status === "processing" || i.status === "waiting"
   );
@@ -509,10 +740,19 @@ export default function Home() {
           output: { format: "image/png" },
         });
         modelCachedRef.current = true;
+        const cutoutUrl = URL.createObjectURL(result);
+        // Near-empty cutouts get flagged "Check this one" instead of a silent
+        // Done that would zip a blank white JPEG.
+        let nearEmpty = false;
+        try {
+          nearEmpty = isNearEmpty(await cutoutCoverage(cutoutUrl));
+        } catch {
+          nearEmpty = false; // if the check itself fails, don't block the photo
+        }
         updateItem(item.id, {
-          status: "done",
+          status: nearEmpty ? "check" : "done",
           cutoutBlob: result,
-          cutoutUrl: URL.createObjectURL(result),
+          cutoutUrl,
         });
         // First finished result opens large automatically.
         setSelectedId((prev) => prev ?? item.id);
@@ -572,6 +812,15 @@ export default function Home() {
     [pump]
   );
 
+  // Per-photo retry: re-queue just this photo, no page reload needed.
+  const retryItem = useCallback(
+    (id: string) => {
+      updateItem(id, { status: "waiting", error: undefined });
+      void pump();
+    },
+    [updateItem, pump]
+  );
+
   const handleFiles = useCallback(
     (files: FileList | null) => {
       const list = Array.from(files ?? []);
@@ -627,7 +876,8 @@ export default function Home() {
     compositeWhite(
       selectedCutoutUrl,
       Math.max(1, Math.round(w * scale)),
-      Math.max(1, Math.round(h * scale))
+      Math.max(1, Math.round(h * scale)),
+      marginPct
     )
       .then((blob) => {
         if (cancelled) return;
@@ -644,7 +894,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCutoutUrl, presetId, customW, customH]);
+  }, [selectedCutoutUrl, presetId, customW, customH, marginPct]);
 
   const downloadPng = useCallback(() => {
     if (selected?.cutoutBlob)
@@ -654,13 +904,13 @@ export default function Home() {
   const exportJpegFor = useCallback(
     async (item: QueueItem) => {
       if (!item.cutoutUrl) return null;
-      const blob = await compositeWhite(item.cutoutUrl, dims.w, dims.h);
+      const blob = await compositeWhite(item.cutoutUrl, dims.w, dims.h, marginPct);
       return {
         blob,
         filename: `${item.baseName}-${preset.id}-${dims.w}x${dims.h}.jpg`,
       };
     },
-    [dims.w, dims.h, preset.id]
+    [dims.w, dims.h, preset.id, marginPct]
   );
 
   const downloadJpeg = useCallback(
@@ -711,6 +961,8 @@ export default function Home() {
           : "Removing background…";
       case "done":
         return "Done";
+      case "check":
+        return "Check this one — cutout looks nearly empty";
       case "error":
         return item.error ?? "Failed";
     }
@@ -728,12 +980,12 @@ export default function Home() {
             Listing-ready product photos in your browser
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Remove the background, get a white-background JPEG sized for your
-            marketplace — free, no upload, no signup.
+            Remove the background, get a white-background JPEG sized for eBay,
+            Etsy, Poshmark, Depop, or Facebook — free, no upload, no signup.
           </p>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
-            eBay &amp; Poshmark feature white-background photos — clean listings
-            sell faster.
+            eBay&rsquo;s own photo guidelines recommend a clean white
+            background.
           </p>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-800">
             <svg
@@ -878,15 +1130,19 @@ export default function Home() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (item.status === "done") {
+                        if (item.status === "done" || item.status === "check") {
                           setSelectedId(item.id);
                           setEditing(false);
                         }
                       }}
-                      disabled={item.status !== "done"}
+                      disabled={item.status !== "done" && item.status !== "check"}
                       className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left ${
                         item.id === selectedId ? "ring-2 ring-sky-500 ring-offset-2" : ""
-                      } ${item.status === "done" ? "cursor-pointer" : "cursor-default"}`}
+                      } ${
+                        item.status === "done" || item.status === "check"
+                          ? "cursor-pointer"
+                          : "cursor-default"
+                      }`}
                     >
                       <span
                         className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-slate-200"
@@ -907,16 +1163,18 @@ export default function Home() {
                           className={`block text-xs ${
                             item.status === "error"
                               ? "text-red-600"
-                              : item.status === "done"
-                                ? "text-emerald-600"
-                                : "text-slate-500"
+                              : item.status === "check"
+                                ? "font-semibold text-amber-600"
+                                : item.status === "done"
+                                  ? "text-emerald-600"
+                                  : "text-slate-500"
                           }`}
                         >
                           {statusText(item)}
                         </span>
                       </span>
                     </button>
-                    {item.status === "done" ? (
+                    {item.status === "done" || item.status === "check" ? (
                       <button
                         type="button"
                         aria-label={`Download ${item.name} as white JPEG`}
@@ -925,6 +1183,16 @@ export default function Home() {
                         className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                       >
                         Download
+                      </button>
+                    ) : null}
+                    {item.status === "error" ? (
+                      <button
+                        type="button"
+                        aria-label={`Retry ${item.name}`}
+                        onClick={() => retryItem(item.id)}
+                        className="shrink-0 rounded-lg border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100"
+                      >
+                        Retry
                       </button>
                     ) : null}
                   </li>
@@ -942,6 +1210,15 @@ export default function Home() {
                     ? "Preparing ZIP…"
                     : `Download all (ZIP) — ${doneItems.length} photos, ${sizeName}`}
                 </button>
+              ) : null}
+              {checkItems.length > 0 ? (
+                <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                  {checkItems.length}{" "}
+                  {checkItems.length === 1 ? "photo is" : "photos are"} marked
+                  &ldquo;Check this one&rdquo; and left out of the ZIP — open
+                  each row to inspect it, then Touch up or download it on its
+                  own.
+                </p>
               ) : null}
             </div>
           )}
@@ -1003,10 +1280,24 @@ export default function Home() {
             </div>
           ) : null}
 
-          {selected && selected.status === "done" && selected.cutoutUrl ? (
+          {selected &&
+          (selected.status === "done" || selected.status === "check") &&
+          selected.cutoutUrl ? (
             <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              {selected.status === "check" ? (
+                <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+                  Check this one — the cutout came back nearly empty, so the
+                  remover may have missed the product. Use{" "}
+                  <strong>Touch up → Restore</strong> to paint it back, or
+                  re-shoot with more contrast against the background.
+                </p>
+              ) : null}
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Done — here’s your cutout</h2>
+                <h2 className="text-lg font-semibold">
+                  {selected.status === "check"
+                    ? "Check this one"
+                    : "Done — here’s your cutout"}
+                </h2>
                 {!editing ? (
                   <button
                     type="button"
@@ -1025,12 +1316,22 @@ export default function Home() {
                     originalUrl={selected.originalUrl}
                     onDone={(blob) => {
                       const oldUrl = selected.cutoutUrl;
-                      updateItem(selected.id, {
+                      const id = selected.id;
+                      const newUrl = URL.createObjectURL(blob);
+                      updateItem(id, {
                         cutoutBlob: blob,
-                        cutoutUrl: URL.createObjectURL(blob),
+                        cutoutUrl: newUrl,
                       });
                       if (oldUrl) URL.revokeObjectURL(oldUrl);
                       setEditing(false);
+                      // A Restore pass can rescue a flagged cutout — re-check.
+                      void cutoutCoverage(newUrl)
+                        .then((cov) => {
+                          updateItem(id, {
+                            status: isNearEmpty(cov) ? "check" : "done",
+                          });
+                        })
+                        .catch(() => {});
                     }}
                     onCancel={() => setEditing(false)}
                   />
@@ -1084,31 +1385,59 @@ export default function Home() {
               — white background, exact size
             </span>
           </h2>
-          {doneItems.length === 0 ? (
+          {readyItems.length === 0 ? (
             <p className="mt-1 text-sm text-slate-500">Drop a photo first.</p>
           ) : null}
-          <div
-            className="mt-3 flex flex-wrap gap-2"
-            role="radiogroup"
-            aria-label="Marketplace preset"
-          >
-            {PRESETS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                role="radio"
-                aria-checked={presetId === p.id}
-                disabled={doneItems.length === 0}
-                onClick={() => setPresetId(p.id)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                  presetId === p.id && doneItems.length > 0
-                    ? "border-sky-600 bg-sky-600 text-white"
-                    : "border-slate-300 bg-white text-slate-700 hover:border-sky-400"
-                }`}
-              >
-                {p.chip}
-              </button>
-            ))}
+          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
+            <div
+              className="flex flex-wrap gap-2"
+              role="radiogroup"
+              aria-label="Marketplace preset"
+            >
+              {PRESETS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={presetId === p.id}
+                  disabled={readyItems.length === 0}
+                  onClick={() => setPresetId(p.id)}
+                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                    presetId === p.id && readyItems.length > 0
+                      ? "border-sky-600 bg-sky-600 text-white"
+                      : "border-slate-300 bg-white text-slate-700 hover:border-sky-400"
+                  }`}
+                >
+                  {p.chip}
+                </button>
+              ))}
+            </div>
+            <label
+              className={`flex items-center gap-2 text-sm text-slate-700 ${
+                readyItems.length === 0 ? "opacity-50" : ""
+              }`}
+            >
+              <span className="font-medium">
+                Margin{" "}
+                <span className="font-normal text-slate-500">
+                  — space around the product
+                </span>
+              </span>
+              <input
+                type="range"
+                min={MARGIN_MIN}
+                max={MARGIN_MAX}
+                step={1}
+                value={marginPct}
+                disabled={readyItems.length === 0}
+                onChange={(e) => setMarginPct(clampMargin(Number(e.target.value)))}
+                className="w-32 accent-sky-600"
+                aria-label="Margin — space around the product"
+              />
+              <span className="w-8 tabular-nums text-slate-500">
+                {marginPct}%
+              </span>
+            </label>
           </div>
 
           {presetId === "custom" ? (
@@ -1120,7 +1449,7 @@ export default function Home() {
                   min={200}
                   max={4000}
                   value={customW}
-                  disabled={doneItems.length === 0}
+                  disabled={readyItems.length === 0}
                   onChange={(e) => setCustomW(e.target.value)}
                   onBlur={() => setCustomW(String(clampDim(customW, 2000)))}
                   className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
@@ -1134,7 +1463,7 @@ export default function Home() {
                   min={200}
                   max={4000}
                   value={customH}
-                  disabled={doneItems.length === 0}
+                  disabled={readyItems.length === 0}
                   onChange={(e) => setCustomH(e.target.value)}
                   onBlur={() => setCustomH(String(clampDim(customH, 2000)))}
                   className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
@@ -1144,7 +1473,8 @@ export default function Home() {
             </div>
           ) : null}
 
-          {selected && selected.status === "done" ? (
+          {selected &&
+          (selected.status === "done" || selected.status === "check") ? (
             <div className="mt-5 flex flex-col items-start gap-5 sm:flex-row">
               <figure className="w-40 max-w-full">
                 {previewUrl ? (

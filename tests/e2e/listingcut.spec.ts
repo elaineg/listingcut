@@ -118,8 +118,12 @@ test.describe("full flow (model download + inference)", () => {
     await expect(page.getByText("Working on your photo…")).toBeVisible({
       timeout: 10_000,
     });
-    await expect(page.getByText("Downloading model", { exact: false })).toBeVisible();
-    await expect(page.getByText("Removing background…")).toBeVisible();
+    // The queue row also says "Downloading model… N%" / "Removing background…",
+    // so target the numbered progress-step labels to stay unambiguous.
+    await expect(
+      page.getByText("1. Downloading model (one-time, ~50 MB)")
+    ).toBeVisible();
+    await expect(page.getByText("2. Removing background…")).toBeVisible();
 
     // ...and resolves to the done state.
     await expect(page.getByText("Done — here’s your cutout")).toBeVisible({
