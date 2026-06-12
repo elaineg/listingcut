@@ -1,0 +1,125 @@
+{
+  "app": "listingcut",
+  "personas": [
+    {
+      "id": 1,
+      "name": "Darlene Okafor",
+      "age": 52,
+      "occupation": "Part-time eBay reseller (thrifted clothing & shoes), retired school admin",
+      "tech_savviness": "low",
+      "device": "iPhone 12, Safari",
+      "current_solution": "Takes photos against a white bedsheet; occasionally pays a grandkid to 'clean them up' in some app",
+      "motivation": "eBay listings with messy backgrounds sell worse; heard white backgrounds matter",
+      "patience": "low — if it's confusing in a minute she closes the tab",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 2,
+      "name": "Marcus Tran",
+      "age": 29,
+      "occupation": "Full-time Poshmark/Depop seller, ~80 listings a week",
+      "tech_savviness": "high",
+      "device": "MacBook Air, Chrome",
+      "current_solution": "Photoroom free tier on phone (hates the watermark prompts), Canva when on laptop",
+      "motivation": "Volume — anything that shaves seconds per listing matters; sick of Photoroom upsells",
+      "patience": "medium — will tolerate a one-time setup cost if throughput is good after",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 3,
+      "name": "Rita Vasquez",
+      "age": 41,
+      "occupation": "Etsy shop owner (handmade ceramics)",
+      "tech_savviness": "medium",
+      "device": "Windows laptop, Edge",
+      "current_solution": "remove.bg free (annoyed by the resolution cap), then Canva to put on white and resize to 2000px",
+      "motivation": "Etsy thumbnails need clean white backgrounds at 2000x2000; her current flow is 3 tools",
+      "patience": "medium",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 4,
+      "name": "Kevin Doyle",
+      "age": 35,
+      "occupation": "Software engineer, sells old electronics on eBay a few times a year",
+      "tech_savviness": "high",
+      "device": "Linux desktop, Firefox",
+      "current_solution": "GIMP by hand, or just ships photos with cluttered desk backgrounds",
+      "motivation": "Skeptical of 'free' web tools that secretly upload images; privacy claim caught his eye",
+      "patience": "high — will open devtools to check the privacy claim",
+      "relationship_to_problem": "target audience, privacy-skeptic"
+    },
+    {
+      "id": 5,
+      "name": "Amara Singh",
+      "age": 24,
+      "occupation": "Depop seller (vintage streetwear) and barista",
+      "tech_savviness": "medium",
+      "device": "Android (Pixel 7), Chrome mobile",
+      "current_solution": "Photoroom app free tier; sometimes just crops tight and hopes",
+      "motivation": "Wants the white-background look the big sellers have, on her phone, free",
+      "patience": "low — mobile attention span; a 20-second unexplained spinner loses her",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 6,
+      "name": "Tom Brzezinski",
+      "age": 63,
+      "occupation": "Sells woodworking pieces at craft fairs; daughter set up an Etsy shop for him",
+      "tech_savviness": "low",
+      "device": "iPad, Safari",
+      "current_solution": "Daughter edits photos when she visits; otherwise uploads as-is",
+      "motivation": "Wants to stop waiting for his daughter to make listings look professional",
+      "patience": "medium — patient by nature but easily lost by jargon like 'PNG' or 'transparent'",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 7,
+      "name": "Jess Nakamura",
+      "age": 33,
+      "occupation": "Freelance graphic designer",
+      "tech_savviness": "high",
+      "device": "MacBook Pro, Chrome",
+      "current_solution": "Photoshop 'Select Subject' — professional quality in 30 seconds",
+      "motivation": "Evaluating free tools to recommend to small-business clients who won't pay for Photoshop",
+      "patience": "high, but judges output quality harshly (hair edges, fine detail, halos)",
+      "relationship_to_problem": "adjacent skeptic — has a better paid tool"
+    },
+    {
+      "id": 8,
+      "name": "Priya Patel",
+      "age": 38,
+      "occupation": "Runs a small Shopify store for phone accessories; also lists on eBay",
+      "tech_savviness": "medium",
+      "device": "Windows laptop, Chrome",
+      "current_solution": "Pays a Fiverr freelancer $15 per batch of 20 product photos, 2-day turnaround",
+      "motivation": "Cost and turnaround — wants same-day listings without the Fiverr loop",
+      "patience": "medium — compares everything to 'is this better than waiting 2 days'",
+      "relationship_to_problem": "target audience"
+    },
+    {
+      "id": 9,
+      "name": "Caleb Wright",
+      "age": 19,
+      "occupation": "College student flipping sneakers on StockX/eBay",
+      "tech_savviness": "medium",
+      "device": "iPhone 15, Safari",
+      "current_solution": "Doesn't edit — shoots on his dorm floor; thinks editing tools are for 'serious sellers'",
+      "motivation": "Saw a TikTok about white-background listings selling faster; mildly curious",
+      "patience": "very low — three taps or he's gone",
+      "relationship_to_problem": "adjacent skeptic — doesn't believe he needs this"
+    },
+    {
+      "id": 10,
+      "name": "Helen Marsh",
+      "age": 47,
+      "occupation": "Office manager; sells household items on Facebook Marketplace when decluttering",
+      "tech_savviness": "low",
+      "device": "Android (Samsung A54), Chrome mobile",
+      "current_solution": "Nothing — posts photos straight from her camera roll",
+      "motivation": "A friend said her couch listing photo 'looked like a crime scene'; wants nicer photos with zero learning curve",
+      "patience": "low-medium — will follow obvious instructions but won't hunt for features",
+      "relationship_to_problem": "adjacent — Facebook Marketplace doesn't require white backgrounds"
+    }
+  ]
+}
