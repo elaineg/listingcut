@@ -1,0 +1,6 @@
+STOPPED 2026-06-13 by Elaine directive ("ux validation taking too long, move on").
+Reached 8/10 testers passing (advocacy >=9 + Yes/Yes) at round 3 — one short of the 9/10 bar.
+Holdouts: T8 (advocacy 4, value Marginal) and T9 (8, value Marginal) — both wanted better
+automatic mask cleanup on busy backgrounds (round-4 fix was mid-flight when stopped).
+Round-3 build promoted to production: https://listingcut.vercel.app
+Not a PASS; not eligible for further panel investment unless Elaine reopens it.

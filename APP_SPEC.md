@@ -27,4 +27,4 @@ Out of scope:
 - Accounts, history, saved images, server-side storage of any kind.
 - WebP output, PWA/offline install, API endpoint.
 
-Production URL: <filled in by deployer>
+Production URL: https://listingcut.vercel.app
