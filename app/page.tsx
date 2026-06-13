@@ -8,6 +8,7 @@ import {
   MARGIN_MIN,
   alphaCoverage,
   clampMargin,
+  cleanMask,
   isNearEmpty,
 } from "../lib/compose";
 
@@ -128,6 +129,38 @@ function canvasToBlob(
       quality
     );
   });
+}
+
+/**
+ * Post-process the model's raw cutout blob:
+ *   1. Draw to canvas, read pixel data.
+ *   2. Run cleanMask (connected-component blob removal + optional shadow suppression).
+ *   3. Write the cleaned pixels back and export as a new PNG blob.
+ */
+async function applyMaskClean(
+  rawBlob: Blob,
+  removeShadow: boolean
+): Promise<Blob> {
+  const url = URL.createObjectURL(rawBlob);
+  try {
+    const img = await loadImage(url);
+    const canvas = document.createElement("canvas");
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const cleaned = cleanMask(imageData.data as Uint8ClampedArray, canvas.width, canvas.height, {
+      removeShadow,
+      minFraction: 0.03,
+    });
+    const outData = ctx.createImageData(canvas.width, canvas.height);
+    outData.data.set(cleaned);
+    ctx.putImageData(outData, 0, 0);
+    return canvasToBlob(canvas, "image/png");
+  } finally {
+    URL.revokeObjectURL(url);
+  }
 }
 
 /** Composite the trimmed cutout centered on a white canvas of the preset size. */
@@ -257,6 +290,8 @@ function TouchUpEditor({
   const [canUndo, setCanUndo] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  // Track whether the user has made any brush strokes (for discard confirm)
+  const hasEditsRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -339,6 +374,7 @@ function TouchUpEditor({
         ctx.drawImage(mask, 0, 0);
         ctx.restore();
       }
+      hasEditsRef.current = true;
     },
     [tool]
   );
@@ -401,6 +437,14 @@ function TouchUpEditor({
       setSaving(false);
     }
   }, [onDone]);
+
+  // Cancel with discard-confirm if there are unsaved brush edits.
+  const handleCancel = useCallback(() => {
+    if (hasEditsRef.current) {
+      if (!window.confirm("Discard your touch-ups?")) return;
+    }
+    onCancel();
+  }, [onCancel]);
 
   return (
     <div>
@@ -487,7 +531,7 @@ function TouchUpEditor({
 
       {loadError ? (
         <p className="mt-4 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
-          Couldn’t open the editor for this photo.
+          Couldn&apos;t open the editor for this photo.
         </p>
       ) : (
         <div
@@ -640,12 +684,77 @@ function TouchUpEditor({
         </button>
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleCancel}
           className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           Cancel
         </button>
       </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * SizesPopover: small popover for multi-preset ZIP selection.
+ * ------------------------------------------------------------------------- */
+
+function SizesPopover({
+  presets,
+  selectedIds,
+  onChange,
+  onClose,
+}: {
+  presets: Preset[];
+  selectedIds: Set<string>;
+  onChange: (ids: Set<string>) => void;
+  onClose: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Close on click outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full z-20 mt-1 w-52 rounded-lg border border-slate-200 bg-white p-3 shadow-lg"
+      role="dialog"
+      aria-label="Choose export sizes for ZIP"
+    >
+      <p className="mb-2 text-xs font-semibold text-slate-600 uppercase tracking-wide">
+        Include in ZIP
+      </p>
+      {presets
+        .filter((p) => p.id !== "custom")
+        .map((p) => (
+          <label key={p.id} className="flex cursor-pointer items-center gap-2 py-1 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={selectedIds.has(p.id)}
+              onChange={(e) => {
+                const next = new Set(selectedIds);
+                if (e.target.checked) next.add(p.id);
+                else next.delete(p.id);
+                if (next.size > 0) onChange(next);
+              }}
+              className="accent-sky-600"
+            />
+            {p.chip}
+          </label>
+        ))}
+      <button
+        type="button"
+        onClick={onClose}
+        className="mt-2 w-full rounded-md bg-sky-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-sky-700"
+      >
+        Done
+      </button>
     </div>
   );
 }
@@ -672,7 +781,13 @@ export default function Home() {
   const [editing, setEditing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  // "Remove shadow" toggle: default ON, affects mask cleaning for new photos.
+  const [removeShadow, setRemoveShadow] = useState(true);
+  // Multi-preset ZIP: set of preset IDs to include (default = current preset).
+  const [zipPresetIds, setZipPresetIds] = useState<Set<string>>(new Set(["ebay"]));
+  const [showSizesPopover, setShowSizesPopover] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addMoreInputRef = useRef<HTMLInputElement>(null);
   const modelCachedRef = useRef(false);
   // @imgly/background-removal memoizes its model init on JSON.stringify(config)
   // — including a REJECTED init (e.g. a network blip during the one-time model
@@ -684,6 +799,8 @@ export default function Home() {
   const idRef = useRef(0);
   const itemsRef = useRef<QueueItem[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Keep a ref to the current removeShadow value for use inside processItem without stale closure.
+  const removeShadowRef = useRef(removeShadow);
 
   const preset = PRESETS.find((p) => p.id === presetId)!;
   const dims = presetDims(preset, customW, customH);
@@ -700,6 +817,7 @@ export default function Home() {
     (i) => i.status === "processing" || i.status === "waiting"
   );
   const processingItem = items.find((i) => i.status === "processing") ?? null;
+  const batchComplete = items.length > 0 && !anyProcessing;
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -711,6 +829,20 @@ export default function Home() {
     }, 0);
     return () => clearTimeout(t);
   }, []);
+
+  // Keep removeShadowRef in sync with state (no setState in effect body).
+  useEffect(() => {
+    removeShadowRef.current = removeShadow;
+  }, [removeShadow]);
+
+  // Keep zipPresetIds in sync when presetId changes (default = current preset if user hasn't customised).
+  // We track whether user has manually changed zipPresetIds to avoid overriding their choice.
+  const zipCustomisedRef = useRef(false);
+  useEffect(() => {
+    if (!zipCustomisedRef.current) {
+      setZipPresetIds(new Set([presetId === "custom" ? "ebay" : presetId]));
+    }
+  }, [presetId]);
 
   const updateItem = useCallback((id: string, patch: Partial<QueueItem>) => {
     itemsRef.current = itemsRef.current.map((i) =>
@@ -748,11 +880,20 @@ export default function Home() {
           // its memoize key — see initSaltRef above.
           retrySalt: initSaltRef.current,
         };
-        const result = await removeBackground(
+        const rawResult = await removeBackground(
           item.file,
           config as Parameters<typeof removeBackground>[1]
         );
         modelCachedRef.current = true;
+
+        // Post-process: connected-component blob removal + optional shadow suppression.
+        let result: Blob;
+        try {
+          result = await applyMaskClean(rawResult, removeShadowRef.current);
+        } catch {
+          result = rawResult; // fallback: use raw if clean fails
+        }
+
         const cutoutUrl = URL.createObjectURL(result);
         // Near-empty cutouts get flagged "Check this one" instead of a silent
         // Done that would zip a blank white JPEG.
@@ -776,9 +917,17 @@ export default function Home() {
         // failure. Once the model is cached, keep the key stable so later
         // photos reuse the loaded session.
         if (!modelCachedRef.current) initSaltRef.current += 1;
+        const rawMsg = e instanceof Error ? e.message : "";
+        const isFetchError =
+          rawMsg.toLowerCase().includes("fetch") ||
+          rawMsg.toLowerCase().includes("network") ||
+          rawMsg.toLowerCase().includes("load");
+        const friendlyMsg = isFetchError
+          ? "Couldn’t download the background-removal tool — check your connection and tap Retry."
+          : rawMsg || "Background removal failed";
         updateItem(item.id, {
           status: "error",
-          error: e instanceof Error ? e.message : "Background removal failed",
+          error: friendlyMsg,
         });
       } finally {
         if (timerRef.current) {
@@ -921,15 +1070,17 @@ export default function Home() {
   }, [selected]);
 
   const exportJpegFor = useCallback(
-    async (item: QueueItem) => {
+    async (item: QueueItem, forPresetId?: string) => {
       if (!item.cutoutUrl) return null;
-      const blob = await compositeWhite(item.cutoutUrl, dims.w, dims.h, marginPct);
+      const p = PRESETS.find((x) => x.id === (forPresetId ?? presetId))!;
+      const { w, h } = presetDims(p, customW, customH);
+      const blob = await compositeWhite(item.cutoutUrl, w, h, marginPct);
       return {
         blob,
-        filename: `${item.baseName}-${preset.id}-${dims.w}x${dims.h}.jpg`,
+        filename: `${item.baseName}-${p.id}-${w}x${h}.jpg`,
       };
     },
-    [dims.w, dims.h, preset.id, marginPct]
+    [presetId, customW, customH, marginPct]
   );
 
   const downloadJpeg = useCallback(
@@ -951,24 +1102,43 @@ export default function Home() {
       const JSZip = (await import("jszip")).default;
       const zip = new JSZip();
       const used = new Set<string>();
+      const targetPresets = [...zipPresetIds];
       for (const item of itemsRef.current.filter((i) => i.status === "done")) {
-        const out = await exportJpegFor(item);
-        if (!out) continue;
-        let name = out.filename;
-        let n = 2;
-        while (used.has(name)) {
-          name = out.filename.replace(/\.jpg$/, `-${n}.jpg`);
-          n += 1;
+        for (const pid of targetPresets) {
+          const out = await exportJpegFor(item, pid);
+          if (!out) continue;
+          let name = out.filename;
+          let n = 2;
+          while (used.has(name)) {
+            name = out.filename.replace(/\.jpg$/, `-${n}.jpg`);
+            n += 1;
+          }
+          used.add(name);
+          zip.file(name, out.blob);
         }
-        used.add(name);
-        zip.file(name, out.blob);
       }
       const blob = await zip.generateAsync({ type: "blob" });
-      downloadBlob(blob, `listingcut-${preset.id}-${dims.w}x${dims.h}.zip`);
+      const presetLabel =
+        targetPresets.length === 1
+          ? targetPresets[0]
+          : `${targetPresets.length}-sizes`;
+      downloadBlob(blob, `listingcut-${presetLabel}-${doneItems.length}photos.zip`);
     } finally {
       setZipping(false);
     }
-  }, [exportJpegFor, preset.id, dims.w, dims.h]);
+  }, [exportJpegFor, zipPresetIds, doneItems.length]);
+
+  // Row-click handler: if currently in touch-up mode with edits, confirm before switching.
+  const handleRowClick = useCallback(
+    (itemId: string) => {
+      if (editing) {
+        if (!window.confirm("Discard your touch-ups?")) return;
+        setEditing(false);
+      }
+      setSelectedId(itemId);
+    },
+    [editing]
+  );
 
   const statusText = (item: QueueItem) => {
     switch (item.status) {
@@ -1060,11 +1230,11 @@ export default function Home() {
               </p>
               {/* Pre-upload disclosure: batch + one-time model download */}
               <p className="mt-3 text-sm text-slate-600">
-                Drop up to 20 photos at once — they’re processed one by one.
+                Drop up to 20 photos at once — they&apos;re processed one by one.
               </p>
               <p className="mt-1 text-sm text-slate-600">
-                First photo downloads a one-time ~50 MB tool — after that it’s
-                fast.
+                First photo downloads a one-time ~50 MB tool — next photos take
+                ~10 seconds each.
               </p>
 
               {/* Worked example inside the drop zone */}
@@ -1132,14 +1302,38 @@ export default function Home() {
                     ({doneItems.length}/{items.length} done)
                   </span>
                 </h2>
-                <button
-                  type="button"
-                  onClick={startOver}
-                  disabled={anyProcessing}
-                  className="text-sm font-semibold text-sky-600 hover:text-sky-700 disabled:opacity-40"
-                >
-                  Start over
-                </button>
+                <div className="flex items-center gap-3">
+                  {batchComplete ? (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => addMoreInputRef.current?.click()}
+                        className="text-sm font-semibold text-sky-600 hover:text-sky-700"
+                      >
+                        Add more photos
+                      </button>
+                      <input
+                        ref={addMoreInputRef}
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => {
+                          handleFiles(e.target.files);
+                          e.target.value = "";
+                        }}
+                      />
+                    </>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={startOver}
+                    disabled={anyProcessing}
+                    className="text-sm font-semibold text-sky-600 hover:text-sky-700 disabled:opacity-40"
+                  >
+                    Start over
+                  </button>
+                </div>
               </div>
 
               {/* Queue: plain vertical list, one row per photo */}
@@ -1150,21 +1344,22 @@ export default function Home() {
                       type="button"
                       onClick={() => {
                         if (item.status === "done" || item.status === "check") {
-                          setSelectedId(item.id);
+                          handleRowClick(item.id);
                           setEditing(false);
                         }
                       }}
                       disabled={item.status !== "done" && item.status !== "check"}
-                      className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left ${
+                      className={`flex min-w-0 flex-1 items-center gap-3 rounded-lg text-left transition-transform ${
                         item.id === selectedId ? "ring-2 ring-sky-500 ring-offset-2" : ""
                       } ${
                         item.status === "done" || item.status === "check"
-                          ? "cursor-pointer"
+                          ? "cursor-pointer hover:-translate-y-0.5"
                           : "cursor-default"
                       }`}
                     >
+                      {/* Larger thumbnail — clearly tappable */}
                       <span
-                        className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-slate-200"
+                        className="h-16 w-16 shrink-0 overflow-hidden rounded-md border border-slate-200"
                         style={item.cutoutUrl ? CHECKERBOARD : undefined}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1219,16 +1414,38 @@ export default function Home() {
               </ul>
 
               {doneItems.length >= 2 ? (
-                <button
-                  type="button"
-                  onClick={() => void downloadZip()}
-                  disabled={zipping}
-                  className="mt-3 w-full rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60"
-                >
-                  {zipping
-                    ? "Preparing ZIP…"
-                    : `Download all (ZIP) — ${doneItems.length} photos, ${sizeName}`}
-                </button>
+                <div className="relative mt-3 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void downloadZip()}
+                    disabled={zipping}
+                    className="flex-1 rounded-lg bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60"
+                  >
+                    {zipping
+                      ? "Preparing ZIP…"
+                      : `Download all (ZIP) — ${doneItems.length} photos, ${sizeName}`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowSizesPopover((v) => !v)}
+                    className="shrink-0 rounded-lg border border-slate-300 px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                    aria-haspopup="true"
+                    aria-expanded={showSizesPopover}
+                  >
+                    Sizes…
+                  </button>
+                  {showSizesPopover ? (
+                    <SizesPopover
+                      presets={PRESETS}
+                      selectedIds={zipPresetIds}
+                      onChange={(ids) => {
+                        zipCustomisedRef.current = true;
+                        setZipPresetIds(ids);
+                      }}
+                      onClose={() => setShowSizesPopover(false)}
+                    />
+                  ) : null}
+                </div>
               ) : null}
               {checkItems.length > 0 ? (
                 <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
@@ -1239,6 +1456,21 @@ export default function Home() {
                   own.
                 </p>
               ) : null}
+
+              {/* Remove shadow toggle — near the queue, quiet and plain-words */}
+              <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
+                <input
+                  id="remove-shadow"
+                  type="checkbox"
+                  checked={removeShadow}
+                  onChange={(e) => setRemoveShadow(e.target.checked)}
+                  className="accent-sky-600"
+                />
+                <label htmlFor="remove-shadow" className="cursor-pointer select-none">
+                  Remove shadow{" "}
+                  <span className="text-slate-400">(auto-cleans cast shadows from cutouts)</span>
+                </label>
+              </div>
             </div>
           )}
 
@@ -1315,7 +1547,7 @@ export default function Home() {
                 <h2 className="text-lg font-semibold">
                   {selected.status === "check"
                     ? "Check this one"
-                    : "Done — here’s your cutout"}
+                    : "Done — here's your cutout"}
                 </h2>
                 {!editing ? (
                   <button
