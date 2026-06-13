@@ -674,6 +674,12 @@ export default function Home() {
   const [isIOS, setIsIOS] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modelCachedRef = useRef(false);
+  // @imgly/background-removal memoizes its model init on JSON.stringify(config)
+  // — including a REJECTED init (e.g. a network blip during the one-time model
+  // download), so a plain retry re-throws the cached failure forever. Its zod
+  // config silently strips unknown keys, so bumping this salt after a failed
+  // init changes the memoize key and forces a genuinely fresh download attempt.
+  const initSaltRef = useRef(0);
   const runningRef = useRef(false);
   const idRef = useRef(0);
   const itemsRef = useRef<QueueItem[]>([]);
@@ -728,7 +734,7 @@ export default function Home() {
         // Dynamic import keeps the inference runtime out of the initial bundle
         // and guarantees it only ever loads in the browser.
         const { removeBackground } = await import("@imgly/background-removal");
-        const result = await removeBackground(item.file, {
+        const config = {
           progress: (key: string, current: number, total: number) => {
             if (key.startsWith("fetch")) {
               setDownloadPct(total > 0 ? Math.round((current / total) * 100) : 0);
@@ -737,8 +743,15 @@ export default function Home() {
               setPhase("removing");
             }
           },
-          output: { format: "image/png" },
-        });
+          output: { format: "image/png" as const },
+          // Unknown to the library's schema (stripped before use) but part of
+          // its memoize key — see initSaltRef above.
+          retrySalt: initSaltRef.current,
+        };
+        const result = await removeBackground(
+          item.file,
+          config as Parameters<typeof removeBackground>[1]
+        );
         modelCachedRef.current = true;
         const cutoutUrl = URL.createObjectURL(result);
         // Near-empty cutouts get flagged "Check this one" instead of a silent
@@ -757,6 +770,12 @@ export default function Home() {
         // First finished result opens large automatically.
         setSelectedId((prev) => prev ?? item.id);
       } catch (e) {
+        // If the model never finished downloading, the library has cached this
+        // rejection under the current config key. Bump the salt so the next
+        // attempt (per-photo Retry) gets a fresh init instead of the cached
+        // failure. Once the model is cached, keep the key stable so later
+        // photos reuse the loaded session.
+        if (!modelCachedRef.current) initSaltRef.current += 1;
         updateItem(item.id, {
           status: "error",
           error: e instanceof Error ? e.message : "Background removal failed",
