@@ -7,6 +7,26 @@
 
 export type BgMode = "white" | "color" | "transparent";
 
+/* ---------------------------------------------------------------------------
+ * Shadow helpers (additive — round 10).
+ * ShadowIntensity maps to sane blur/offset/opacity presets.
+ * ------------------------------------------------------------------------- */
+
+export type ShadowIntensity = "soft" | "medium" | "strong";
+
+export interface ShadowPreset {
+  blur: number;   // Gaussian blur radius (canvas units at export resolution)
+  offsetX: number;
+  offsetY: number;
+  opacity: number; // 0–1
+}
+
+export const SHADOW_PRESETS: Record<ShadowIntensity, ShadowPreset> = {
+  soft:   { blur: 18, offsetX: 4,  offsetY: 8,  opacity: 0.28 },
+  medium: { blur: 28, offsetX: 7,  offsetY: 14, opacity: 0.42 },
+  strong: { blur: 40, offsetX: 10, offsetY: 20, opacity: 0.58 },
+};
+
 export const BG_COLOR_PRESETS = [
   { label: "White", hex: "#ffffff" },
   { label: "Black", hex: "#000000" },
@@ -37,15 +57,17 @@ export function primaryButtonLabel(
   bgColor: string,
   dims: { w: number; h: number },
   preset: { label: string },
-  exporting: boolean
+  exporting: boolean,
+  shadowOn?: boolean
 ): string {
   if (exporting) {
     return bgMode === "transparent" ? "Preparing PNG…" : "Preparing JPEG…";
   }
   const sizeStr = `${dims.w}×${dims.h}`;
   const marketStr = preset.label;
+  const shadowSuffix = shadowOn ? " (with shadow)" : "";
   if (bgMode === "white") {
-    return `Download white JPEG — ${sizeStr} (${marketStr})`;
+    return `Download white JPEG${shadowSuffix} — ${sizeStr} (${marketStr})`;
   }
   if (bgMode === "transparent") {
     return `Download transparent PNG — ${sizeStr}`;
@@ -55,7 +77,7 @@ export function primaryButtonLabel(
     (s) => s.hex.toLowerCase() === bgColor.toLowerCase()
   );
   const colorName = matchedSwatch ? matchedSwatch.label.toLowerCase() : bgColor;
-  return `Download JPEG on this background — ${sizeStr} (${marketStr}) · ${colorName}`;
+  return `Download JPEG on this background${shadowSuffix} — ${sizeStr} (${marketStr}) · ${colorName}`;
 }
 
 export const MARGIN_MIN = 2;

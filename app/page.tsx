@@ -14,8 +14,9 @@ import {
   parseHex,
   resolveFill,
   primaryButtonLabel,
+  SHADOW_PRESETS,
 } from "../lib/compose";
-import type { BgMode } from "../lib/compose";
+import type { BgMode, ShadowIntensity } from "../lib/compose";
 
 type Preset = {
   id: string;
@@ -189,13 +190,18 @@ async function applyMaskClean(
  *   - null → transparent background, export PNG
  *
  * For White mode, pass "#ffffff" — byte-for-byte identical to the old compositeWhite.
+ *
+ * shadow: optional shadow options. Only applied when fill !== null (solid background).
+ * The shadow is derived purely from the subject silhouette/alpha so it does not
+ * depend on fine-hair matte quality.
  */
 export async function composite(
   cutoutUrl: string,
   targetW: number,
   targetH: number,
   marginPct: number,
-  fill: string | null
+  fill: string | null,
+  shadow?: { blur: number; offsetX: number; offsetY: number; opacity: number } | null
 ): Promise<Blob> {
   const img = await loadImage(cutoutUrl);
   const src = document.createElement("canvas");
@@ -222,18 +228,59 @@ export async function composite(
   const scale = Math.min(boxW / b.w, boxH / b.h);
   const drawW = b.w * scale;
   const drawH = b.h * scale;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(
-    src,
-    b.x,
-    b.y,
-    b.w,
-    b.h,
-    (targetW - drawW) / 2,
-    (targetH - drawH) / 2,
-    drawW,
-    drawH
-  );
+  const drawX = (targetW - drawW) / 2;
+  const drawY = (targetH - drawH) / 2;
+
+  // Shadow: composite a blurred, offset, semi-opaque silhouette BENEATH the subject.
+  // Only drawn when there is a solid background (fill !== null).
+  // Layering: 1. fill, 2. shadow halo (offscreen canvas → blended), 3. subject on top.
+  // The shadow body is hidden by the subject pixels so only the soft halo is visible.
+  // Scale blur/offset proportional to how large the subject is drawn (scale factor).
+  if (fill !== null && shadow && shadow.opacity > 0) {
+    const scaledBlur = shadow.blur * Math.max(0.5, Math.min(2, scale));
+    const scaledOffsetX = shadow.offsetX * Math.max(0.5, Math.min(2, scale));
+    const scaledOffsetY = shadow.offsetY * Math.max(0.5, Math.min(2, scale));
+
+    // Step 1: background already filled above.
+
+    // Step 2: draw shadow onto a separate offscreen canvas, then blend onto output.
+    // Using a separate canvas prevents the shadow from being clipped by `out` bounds
+    // differently from the subject placement, and avoids touching `out`'s fill.
+    const shadowCanvas = document.createElement("canvas");
+    shadowCanvas.width = targetW;
+    shadowCanvas.height = targetH;
+    const sctx = shadowCanvas.getContext("2d")!;
+    sctx.save();
+    sctx.shadowColor = "rgba(0,0,0,1)";
+    sctx.shadowBlur = scaledBlur;
+    sctx.shadowOffsetX = scaledOffsetX;
+    sctx.shadowOffsetY = scaledOffsetY;
+    sctx.globalAlpha = shadow.opacity;
+    sctx.imageSmoothingQuality = "high";
+    sctx.drawImage(src, b.x, b.y, b.w, b.h, drawX, drawY, drawW, drawH);
+    sctx.restore();
+
+    // Blend the shadow canvas over the background on `out`.
+    ctx.drawImage(shadowCanvas, 0, 0);
+
+    // Step 3: draw the subject on top (hides shadow body, exposes only the halo).
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(src, b.x, b.y, b.w, b.h, drawX, drawY, drawW, drawH);
+  } else {
+    // No shadow: draw subject normally.
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(
+      src,
+      b.x,
+      b.y,
+      b.w,
+      b.h,
+      drawX,
+      drawY,
+      drawW,
+      drawH
+    );
+  }
 
   if (fill !== null) {
     return canvasToBlob(out, "image/jpeg", 0.92);
@@ -1063,6 +1110,8 @@ interface ExportPrefs {
   bgColor?: string;
   customW?: string;
   customH?: string;
+  shadowOn?: boolean;
+  shadowIntensity?: ShadowIntensity;
 }
 
 export default function Home() {
@@ -1081,6 +1130,9 @@ export default function Home() {
   // Background mode: "white" default (byte-for-byte identical to old behavior)
   const [bgMode, setBgMode] = useState<BgMode>("white");
   const [bgColor, setBgColor] = useState("#ffffff");
+  // Shadow: off by default; intensity defaults to "soft". Sticky like bgMode/bgColor.
+  const [shadowOn, setShadowOn] = useState(false);
+  const [shadowIntensity, setShadowIntensity] = useState<ShadowIntensity>("soft");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -1163,6 +1215,10 @@ export default function Home() {
           }
           if (prefs.customW) setCustomW(prefs.customW);
           if (prefs.customH) setCustomH(prefs.customH);
+          if (typeof prefs.shadowOn === "boolean") setShadowOn(prefs.shadowOn);
+          if (prefs.shadowIntensity && ["soft", "medium", "strong"].includes(prefs.shadowIntensity)) {
+            setShadowIntensity(prefs.shadowIntensity as ShadowIntensity);
+          }
         }
       } catch {
         // ignore malformed JSON
@@ -1181,12 +1237,12 @@ export default function Home() {
   useEffect(() => {
     if (!prefsLoaded.current) return;
     try {
-      const prefs: ExportPrefs = { presetId, marginPct, bgMode, bgColor, customW, customH };
+      const prefs: ExportPrefs = { presetId, marginPct, bgMode, bgColor, customW, customH, shadowOn, shadowIntensity };
       window.localStorage.setItem(LS_KEY, JSON.stringify(prefs));
     } catch {
       // quota or private mode
     }
-  }, [presetId, marginPct, bgMode, bgColor, customW, customH]);
+  }, [presetId, marginPct, bgMode, bgColor, customW, customH, shadowOn, shadowIntensity]);
 
   // Keep removeShadowRef in sync with state (no setState in effect body).
   useEffect(() => {
@@ -1423,6 +1479,8 @@ export default function Home() {
   // background mode, color, or margin changes. Rendered small (≤480px).
   const selectedCutoutUrl = selected?.cutoutUrl ?? null;
   const fill = resolveFill(bgMode, bgColor);
+  // Shadow is only active when bg is solid (not transparent) and shadowOn is true.
+  const activeShadow = (fill !== null && shadowOn) ? SHADOW_PRESETS[shadowIntensity] : null;
   useEffect(() => {
     if (!selectedCutoutUrl) return;
     let cancelled = false;
@@ -1434,7 +1492,8 @@ export default function Home() {
       Math.max(1, Math.round(w * scale)),
       Math.max(1, Math.round(h * scale)),
       marginPct,
-      fill
+      fill,
+      activeShadow
     )
       .then((blob) => {
         if (cancelled) return;
@@ -1451,7 +1510,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCutoutUrl, presetId, customW, customH, marginPct, fill]);
+  }, [selectedCutoutUrl, presetId, customW, customH, marginPct, fill, shadowOn, shadowIntensity]);
 
   const downloadPng = useCallback(() => {
     if (selected?.cutoutBlob)
@@ -1466,13 +1525,15 @@ export default function Home() {
       const activeBgMode = overrideBgMode ?? bgMode;
       const activeBgColor = overrideBgColor ?? bgColor;
       const activeFill = resolveFill(activeBgMode, activeBgColor);
-      const blob = await composite(item.cutoutUrl, w, h, marginPct, activeFill);
+      // Shadow: only when solid background and shadowOn is true.
+      const exportShadow = (activeFill !== null && shadowOn) ? SHADOW_PRESETS[shadowIntensity] : null;
+      const blob = await composite(item.cutoutUrl, w, h, marginPct, activeFill, exportShadow);
       return {
         blob,
         filename: exportFilename(item.baseName, activeBgMode, activeBgColor, p.id, { w, h }),
       };
     },
-    [presetId, customW, customH, marginPct, bgMode, bgColor]
+    [presetId, customW, customH, marginPct, bgMode, bgColor, shadowOn, shadowIntensity]
   );
 
   const downloadExport = useCallback(
@@ -2189,7 +2250,7 @@ export default function Home() {
                             aria-hidden="true"
                           />
                         ) : null}
-                        {primaryButtonLabel(bgMode, bgColor, dims, preset, exporting)}
+                        {primaryButtonLabel(bgMode, bgColor, dims, preset, exporting, shadowOn && fill !== null)}
                       </button>
                       <div className="mt-3">
                         <button
@@ -2321,6 +2382,58 @@ export default function Home() {
                   {marginPct}%
                 </span>
               </label>
+            </div>
+
+            {/* (d) Shadow toggle — last, lowest-weight item in the cluster.
+                Disabled (greyed, NOT removed) when Background = Transparent.
+                Progressive disclosure: intensity control hidden while OFF. */}
+            <div className={`flex flex-wrap items-center gap-3 text-sm ${
+              bgMode === "transparent" ? "opacity-50" : ""
+            }`}>
+              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-700">
+                <input
+                  type="checkbox"
+                  data-testid="shadow-toggle"
+                  checked={shadowOn}
+                  disabled={readyItems.length === 0 || bgMode === "transparent"}
+                  onChange={(e) => setShadowOn(e.target.checked)}
+                  className="accent-sky-600"
+                />
+                <span className="font-medium">Shadow</span>
+              </label>
+              {bgMode === "transparent" ? (
+                <span
+                  className="text-xs text-slate-400"
+                  role="status"
+                  aria-live="polite"
+                >
+                  Shadow needs a solid background (White or Color)
+                </span>
+              ) : shadowOn ? (
+                <div
+                  className="flex rounded-lg border border-slate-300 p-0.5"
+                  role="radiogroup"
+                  aria-label="Shadow intensity"
+                >
+                  {(["soft", "medium", "strong"] as const).map((step) => (
+                    <button
+                      key={step}
+                      type="button"
+                      role="radio"
+                      aria-checked={shadowIntensity === step}
+                      disabled={readyItems.length === 0}
+                      onClick={() => setShadowIntensity(step)}
+                      className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors disabled:cursor-not-allowed ${
+                        shadowIntensity === step
+                          ? "bg-sky-600 text-white"
+                          : "text-slate-600 hover:bg-slate-50"
+                      }`}
+                    >
+                      {step === "soft" ? "Soft" : step === "medium" ? "Medium" : "Strong"}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
 

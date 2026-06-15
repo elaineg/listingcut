@@ -11,6 +11,7 @@ import {
   suppressShadows,
   cleanMask,
   primaryButtonLabel,
+  SHADOW_PRESETS,
 } from "../../lib/compose";
 
 describe("clampMargin", () => {
@@ -274,5 +275,68 @@ describe("primaryButtonLabel — Color mode (round-8 panel-4 fix)", () => {
   it("Transparent mode still reads 'Download transparent PNG' (no regression)", () => {
     const label = primaryButtonLabel("transparent", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
     expect(label).toMatch(/Download transparent PNG/i);
+  });
+});
+
+/* ---------------------------------------------------------------------------
+ * Shadow: primaryButtonLabel "(with shadow)" qualifier (round 10).
+ * --------------------------------------------------------------------------- */
+
+describe("primaryButtonLabel — shadow qualifier", () => {
+  it("White mode with shadowOn=true appends '(with shadow)'", () => {
+    const label = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false, true);
+    expect(label).toMatch(/Download white JPEG \(with shadow\)/i);
+    expect(label).toContain("(with shadow)");
+  });
+
+  it("Color mode with shadowOn=true appends '(with shadow)'", () => {
+    const label = primaryButtonLabel("color", "#1d4ed8", DIMS_1080, SQUARE_PRESET, false, true);
+    expect(label).toContain("this background");
+    expect(label).toContain("(with shadow)");
+  });
+
+  it("Transparent mode with shadowOn=true does NOT append '(with shadow)' (shadow disabled in transparent mode)", () => {
+    // When bgMode=transparent, caller should pass shadowOn=false (shadow inactive).
+    // But even if called with true, the function itself does not add suffix for transparent.
+    // (The current impl only adds suffix for white/color.)
+    const label = primaryButtonLabel("transparent", "#ffffff", DIMS_1080, SQUARE_PRESET, false, true);
+    expect(label).not.toContain("(with shadow)");
+  });
+
+  it("White mode with shadowOn=false (or omitted) has no suffix", () => {
+    const withFalse = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false, false);
+    const withOmitted = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
+    expect(withFalse).not.toContain("(with shadow)");
+    expect(withOmitted).not.toContain("(with shadow)");
+    expect(withFalse).toMatch(/Download white JPEG/i);
+    expect(withOmitted).toMatch(/Download white JPEG/i);
+  });
+
+  it("exporting=true ignores shadowOn and returns 'Preparing JPEG…'", () => {
+    const label = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, true, true);
+    expect(label).toBe("Preparing JPEG…");
+    expect(label).not.toContain("(with shadow)");
+  });
+});
+
+/* ---------------------------------------------------------------------------
+ * SHADOW_PRESETS: sanity checks on preset values.
+ * --------------------------------------------------------------------------- */
+
+describe("SHADOW_PRESETS", () => {
+  it("all three intensity levels are defined with positive blur and opacity", () => {
+    for (const key of ["soft", "medium", "strong"] as const) {
+      const p = SHADOW_PRESETS[key];
+      expect(p.blur).toBeGreaterThan(0);
+      expect(p.opacity).toBeGreaterThan(0);
+      expect(p.opacity).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("strong > medium > soft in terms of blur and opacity", () => {
+    expect(SHADOW_PRESETS.strong.blur).toBeGreaterThan(SHADOW_PRESETS.medium.blur);
+    expect(SHADOW_PRESETS.medium.blur).toBeGreaterThan(SHADOW_PRESETS.soft.blur);
+    expect(SHADOW_PRESETS.strong.opacity).toBeGreaterThan(SHADOW_PRESETS.medium.opacity);
+    expect(SHADOW_PRESETS.medium.opacity).toBeGreaterThan(SHADOW_PRESETS.soft.opacity);
   });
 });
