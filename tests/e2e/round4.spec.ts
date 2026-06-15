@@ -82,10 +82,11 @@ test.describe("round-4 full flow (inference required)", () => {
     const dialog = page.getByRole("dialog", { name: "Choose export sizes for ZIP" });
     await expect(dialog).toBeVisible();
 
-    // Check both eBay and Etsy so the ZIP will have 2 sizes × 2 photos = 4 files
-    const ebayCheck = dialog.getByRole("checkbox", { name: /eBay 1600/i });
+    // Default ZIP preset is Square 1080×1080 (neutral default, round-3 panel).
+    // Check both Square and Etsy so the ZIP will have 2 sizes × 2 photos = 4 files.
+    const squareCheck = dialog.getByRole("checkbox", { name: /Square 1080/i });
     const etsyCheck = dialog.getByRole("checkbox", { name: /Etsy 2000/i });
-    await expect(ebayCheck).toBeChecked(); // default
+    await expect(squareCheck).toBeChecked(); // default is Square now
     await etsyCheck.click();
     await expect(etsyCheck).toBeChecked();
 
@@ -104,16 +105,16 @@ test.describe("round-4 full flow (inference required)", () => {
     // 2 presets × 2 photos = 4 entries
     expect(names.length).toBe(4);
 
-    // Validate at least one eBay and one Etsy file
-    const hasEbay = names.some((n) => n.includes("ebay"));
+    // Validate at least one Square and one Etsy file
+    const hasSquare = names.some((n) => n.includes("square"));
     const hasEtsy = names.some((n) => n.includes("etsy"));
-    expect(hasEbay).toBe(true);
+    expect(hasSquare).toBe(true);
     expect(hasEtsy).toBe(true);
 
-    // Verify a sampled eBay entry is 1600×1600
-    const ebayFile = names.find((n) => n.includes("ebay"))!;
-    const buf = await zip.files[ebayFile].async("nodebuffer");
-    expect(jpegSize(buf)).toEqual({ width: 1600, height: 1600 });
+    // Verify a sampled Square entry is 1080×1080
+    const squareFile = names.find((n) => n.includes("square"))!;
+    const buf = await zip.files[squareFile].async("nodebuffer");
+    expect(jpegSize(buf)).toEqual({ width: 1080, height: 1080 });
 
     // Verify an Etsy entry is 2000×2000
     const etsyFile = names.find((n) => n.includes("etsy"))!;

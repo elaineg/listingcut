@@ -1,45 +1,13 @@
-# Panel Round 3 — Tester 3 (Rita Vasquez, 41, Etsy ceramics shop, Windows/Edge)
-
-## Prior concerns from round 2
-1. **"Failed to fetch" with no retry — FIXED.** I forced the model download to fail (my Wi-Fi
-   hiccups during the 50 MB download are real life). The photo card now shows "Failed to fetch"
-   with a **Retry** button right under it. I clicked Retry once the connection was back and it
-   went straight to Done — no page reload, no re-upload. This was my dealbreaker; it's solved.
-2. **No margin/placement control — FIXED.** There's now a "Margin — space around the product"
-   slider (default 6%). I pushed it to 12% for my tall vase and the live preview updated; the
-   2000×2000 export from the ZIP shows the vase with comfortable white space top and bottom
-   instead of touching the edges. It applies to the whole batch and to the ZIP, which is what
-   I wanted.
-3. **Faint gray edge halo (minor nit) — looks fine this round.** Both my test photos came out
-   with clean edges, and the mug handle's inner hole was cut out correctly. I couldn't
-   reproduce the halo, and the Touch up brushes are still there if a glaze photo misbehaves.
-
-## Clarity — Yes
-"It removes the background from your product photos and gives you white-background JPEGs at
-the exact size each marketplace wants — Etsy 2000×2000 for me — free, in your browser, up to
-20 at a time." The headline, the before/after mug graphic, "Drag & drop photos (up to 20)",
-and the preset chips make it obvious in seconds. The "~50 MB one-time tool" warning sets
-expectations honestly.
-
-## Value — Yes
-Today: remove.bg free (resolution-capped) → Canva white canvas → Canva resize, ~4–5 min per
-photo. Here: dropped 2 photos, clicked "Etsy 2000×2000" once, nudged the margin slider, clicked
-"Download all (ZIP) — 2 photos, Etsy 2000×2000". ZIP contained vase-etsy-2000x2000.jpg and
-mug-etsy-2000x2000.jpg, both verified true 2000×2000 with clean white backgrounds. For a
-12-photo listing day this collapses my three-tool routine into one tab. It has fully replaced
-my old flow.
-
-## Advocacy — 9
-Both things I said were holding me at 8 are fixed, and the fixes work the way I'd want (Retry
-in place, margin slider that affects the batch ZIP). I'm posting this in my Etsy seller
-Facebook group unprompted — that's a 9. What keeps it off a 10: a fresh tab still defaults to
-eBay so I click Etsy every session (remember my last preset, please), and the margin slider
-sits below the photo list where I only found it by scrolling — a tall-photo seller could miss
-it. Small stuff; the core is now genuinely better than my remove.bg + Canva routine.
+---
+NAME: Wen
+CLARITY: Yes — H1 "Remove any background — keep your photo on this device" plus the subline "Headshots & avatars · ads & social · slides & mockups · marketplace listings" and the three White/Color/Transparent cards tell me in ~5s it cuts out a subject and lets me drop it on white, a brand color, or transparent. Nothing seller-specific reads as the default anymore.
+VALUE: Yes — my real today-tool is fumbling a headshot onto brand-blue in an image editor for a Looker report cover. Here: Color in the export row surfaced a native color picker + a #RRGGBB text field; I typed 1a73e8 and downloaded sample-mug-square-1080x1080-1a73e8.jpg. The filename encodes size AND hex, so nothing is transformed invisibly; processed locally, no signup, zero console errors. I'd reach for this over the editor.
+ADVOCACY (1-10): 9 — the seller gravity that held me at 8 is gone: GENERAL & SOCIAL now renders FIRST with Square 1080×1080 leading, MARKETPLACES is second, the default size is neutral Square (not eBay), and the eBay-guidelines line is demoted out of the hero down beneath the marketplace presets. With the broadened fit + honest filenames + local-only processing I'd now bring this up unprompted to a reporting or design teammate. Not a 10 only because the NAME "ListingCut" still telegraphs sellers before the page loads — the product no longer does, but the brand does.
+PRIOR CONCERNS ADDRESSED?: Yes — the seller-gravity is resolved. Marketplaces-first preset order is fixed (General & Social leads with Square), the default is neutral Square not eBay, and the eBay subline is out of the hero. The only residue is the product NAME, not the UI.
+TOP FRICTION: The name "ListingCut" — it's the last thing framing this as a seller tool before I've read a word of the (now neutral) page. Everything inside the app is fixed; the label on the door isn't.
+WHAT WORKED: The Color export path is both discoverable and honest — a synced native picker + #RRGGBB field producing a self-documenting filename carrying size + hex, all in-browser with zero console errors. That mix of legibility and data-hygiene is exactly what earns my trust.
+---
 
 ```json
-{"tester": 3, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 9,
- "topComplaints": ["Fresh tab still defaults to eBay preset instead of remembering my last choice (Etsy)",
- "Margin slider is below the fold under the photo list — easy to miss until you scroll"],
- "priorConcernsAddressed": "all"}
+{"tester": 3, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 9, "topComplaints": ["Brand name 'ListingCut' still telegraphs a seller tool before the page loads, even though the UI no longer does"], "priorConcernsAddressed": "all"}
 ```

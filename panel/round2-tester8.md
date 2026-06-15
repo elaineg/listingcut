@@ -1,46 +1,9 @@
-# Round 2 — Tester 8 (Priya Patel, Shopify/eBay seller, Windows laptop + Chrome)
-
-## Prior concerns from round 1 — were they fixed?
-1. **No batch upload — FIXED.** The dropzone now says "Drag & drop photos (up to 20) or click
-   to upload" and "Drop up to 20 photos at once — they're processed one by one." I dropped 3
-   phone-case photos; all 3 processed in ~42 seconds including the one-time model download,
-   with a per-photo queue ("Your photos (3/3 done)") and — the part I begged for — a
-   "Download all (ZIP) — 3 photos, eBay 1600×1600" button. The ZIP had all three files with
-   clean names (case1-ebay-1600x1600.jpg etc.). This is exactly the fix I asked for.
-2. **Shadow smudge on the cutout — FIXED.** My round-1 dealbreaker was the brown cast-shadow
-   blob left under the product. This time I uploaded the same kind of photo (case on a beige
-   table with a soft shadow) and the exported eBay JPEG is a clean product on pure white — no
-   smudge at all. There's also a new "Touch up" button ("Stray smudge or missing edge? Use
-   Touch up to fix spots the auto-cutout missed") as a safety net. I didn't need it.
-3. **No Shopify/custom size — FIXED.** There's now a "Custom" preset with width/height boxes
-   (defaults 2000×2000), plus new Depop and Facebook presets. The ZIP button updates to match
-   the chosen preset ("Download all (ZIP) — 3 photos, Custom 2000×2000").
-
-## Clarity — Yes
-Same as round 1, still strong: "Free thing in your browser that cuts the background off your
-product photos and gives you white-background JPEGs sized for eBay — now in batches with a
-ZIP download." The headline, the mug before/after, "free, no upload, no signup", and the new
-"up to 20" line tell my whole story above the fold.
-
-## Value — Yes
-Today I pay Fiverr $15 per 20 photos and wait 2 days. With batch + ZIP, 3 photos took 42
-seconds (first run; later photos are faster), so my real 20-photo batch is a coffee-break
-job, same day, $0. The two things that made me untrust it last round — per-photo clicking
-and dirty shadows — are gone, so I'd actually run my listing batches through this unattended
-and only spot-check. This genuinely replaces my Fiverr loop for standard white-background
-shots.
-
-## Advocacy — 9
-I would bring this up unprompted in my reseller Facebook group: "stop paying for background
-removal, this free browser thing does 20 at a time and zips them." What keeps it from a 10:
-(a) the ZIP applies one preset at a time, so getting both eBay 1600 and my Shopify 2000
-sizes means downloading two ZIPs — minor; (b) I tested with fairly clean photos, and the
-queue thumbnails are small, so on a messy 20-photo batch I'd still want a quicker way to eye
-all cutouts at full size before zipping. Neither would stop me recommending it today.
-
-```json
-{"tester": 8, "round": 2, "clarity": "Yes", "value": "Yes", "advocacy": 9,
- "topComplaints": ["ZIP exports one preset at a time — need two downloads for eBay + Shopify sizes",
- "Queue thumbnails are small; reviewing a full 20-photo batch before zipping is squinty"],
- "priorConcernsAddressed": "all"}
-```
+---
+NAME: Rob
+CLARITY: Yes — "Remove any background — keep your photo on this device... clean cutout on white, your brand color, or transparent — free, no upload, no signup" plus the three labeled tiles (White/listings, Color/ads & social, Transparent/slides & mockups) tells me in 10s it's a no-signup brand-asset cutout tool, and the outcome framing finally reads like it's for designers, not just resellers.
+VALUE: Yes — the hex-precise Color fill (#1a73e8 normalized, picker + field) over a clean alpha cutout beats my Photoshop Select Subject -> fill-layer -> export loop, and the batch ZIP now makes it actually faster for VOLUME, which is the only reason I'd switch.
+ADVOCACY (1-10): 8 — the batch question that capped me at 7 is answered convincingly; still short of 9 because every sample/demo edge is a hard-edged product (mug, phone) and I haven't watched it survive hair or fuzzy fabric, where my client returns happen.
+PRIOR CONCERNS ADDRESSED?: Batch value = YES, fully clear now. With 2 successful cutouts the blue "Download all (ZIP) — 2 photos, Story 1080×1920" bar appears, the label names the size, the ZIP contained both files (case1-ebay-1600x1600.jpg / case1b-...), and switching Color + size updated the batch label AND every per-image preview to #1a73e8 — so background + size provably apply across the whole batch, set once. Bonus: a failed/empty cutout is flagged ("Check this one — cutout looks nearly empty") and counts as "1/2 done" so junk won't silently ship into the ZIP. Edge-quality = STILL a partial concern: I ran a real product photo myself and the cutout against the checker looked clean with no visible halo, so it's no longer untested, but the canned sample is still the easy vector mug — no proof on hair/fabric.
+TOP FRICTION: ZIP only appears after 2+ photos FULLY succeed, with zero prior signal — drop one photo (or one + one that fails) and there's no hint a batch/ZIP path even exists, so a first-timer doing volume work can't tell it scales until they happen to drop two good ones. A line like "drop 2+ to download as a ZIP" on the single-photo result would close it.
+WHAT WORKED: One-time setup that fans out to the batch — pick Color, type my brand hex once, pick a marketplace size once, and the "Download all (ZIP) — N photos, <size>" button applies it to all of them with preset-named filenames. That's the part that beats re-doing #1a73e8 twenty times in Photoshop.
+---

@@ -1,53 +1,13 @@
-# Round 1 — Tester 4: Kevin Doyle (software engineer, occasional eBay seller, privacy-skeptic)
-
-## Clarity — Yes
-30 seconds in, I could tell a friend: "Drop in a product photo, it strips the background
-client-side and spits out a white-background JPEG at eBay/Etsy/Poshmark dimensions. No
-account, no upload." The headline "Listing-ready product photos in your browser" plus the
-before/after mug graphic made it instant. The green lock badge "Your photo never leaves
-this device — everything runs in your browser" is exactly the claim that made me stay
-instead of closing the tab. Nothing on screen confused me.
-
-## Privacy audit (the reason I came)
-I watched the network tab through the whole session. Verdict: the claim is TRUE.
-- Zero POST/PUT requests at any point — not on sample, not on my own upload, not on download.
-- The ML model (~couple dozen chunked files) is fetched via GET from `staticimgly.com`
-  (img.ly's open-source background-removal package). That's model weights coming DOWN,
-  nothing going up. Honest.
-- One ding: a `vercel.live` script loads on the page. It's Vercel's toolbar, not analytics
-  on my image, but a "nothing leaves this device" page should be free of third-party JS
-  it doesn't need. A privacy-skeptic notices.
-
-## Value — Yes
-Today I either fuzzy-select in GIMP for 10–15 minutes per photo or just ship the cluttered-
-desk shot and eat the worse listing. This did a clean cutout of my test photo in ~27s
-(first run, including the model download; the model should be cached after) and gave me a
-correctly-sized 2000×2000 white-bg JPEG named `test-item-etsy-2000x2000.jpg`. The exact-
-dimension export is the underrated part — I always have to look up eBay's size rules.
-That's a genuine save over GIMP for the 6–10 photos I do per selling spree.
-
-## What holds it back
-1. One image at a time. A selling session is 4 photos per item × 3 items. No batch, and
-   "Start over" nukes the result — I'd want to queue several and download all.
-2. No edge touch-up. My synthetic test had clean edges; real electronics have cables and
-   matte black corners the model will chew. There's no brush/refine tool, so when the
-   cutout is 90% right I'm back in GIMP anyway for the last 10%.
-3. No hint that the ~40MB model download is coming. On first use the spinner just sits
-   there; I'd add "downloading model (one-time, ~40MB)" so people on slow links don't bail.
-4. Minor: the marketplace download button label lags the chip selection by a beat
-   (still said "Download 1600×1600 JPEG" right after I picked Etsy; it did update).
-
-## Advocacy — 8
-I would actually mention this in a "stop paying remove.bg / stop uploading your photos"
-conversation — the verified client-side claim is the differentiator and it's rare that the
-marketing copy survives a network-tab inspection. It's not a 9 because batch and edge
-refinement are missing, so for a real multi-item selling session it only covers part of
-the job. Fix batch + a refine brush and I'd push it unprompted.
+---
+NAME: Tomás
+CLARITY (understand what it does & how within ~30s cold?): Yes — the H1 "Listing-ready product photos in your browser," the before/after mug, and the green "Your photo never leaves this device — everything runs in your browser" badge told me what it does and that it's safe, all above the fold.
+VALUE (would you actually use this for real work?): Yes — IT blocks installs and I won't paste company shots into a random site, but I confirmed in the network requests that ZERO image data is uploaded, so for the occasional product shot needing a white or branded-color background on a slide/SharePoint header this beats the manual fiddling I do in PowerPoint today.
+ADVOCACY (1-10: likely to recommend to a peer): 8 — the no-upload claim is provably real and it gives away a paid-tool job for free; one stale label and the reseller-only framing keep it off a 9.
+TOP FRICTION: After switching to Color and setting hex #1a73e8, the download button still read "...1600×1600 (eBay) · white" — the "· white" never updated to my custom color. The tab and swatch ring updated, but for a company asset that stale label makes me stop and re-verify what I'm exporting.
+WHAT WORKED: I checked the network traffic and saw NO image POSTs anywhere — only the WASM model loads from a CDN. That client-side proof is what flips me from "wary of a random site" to "I'll actually use this on a work image."
+NEW-FEATURE TAKE: Yes — discoverable and clear. The "Marketplace export — choose background, size, and download" section with the White / Color / Transparent segmented control sits right under the cutout. Color opened a native picker plus a hex field and preset swatches (including a blue I'd use for a branded header); Transparent yields a PNG I'd drop straight into slides. It did what I expected; only the download-button label lagging the chosen color undercut my confidence.
+---
 
 ```json
-{"tester": 4, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8,
- "topComplaints": ["no batch processing for multi-photo selling sessions",
- "no edge refine/brush tool for imperfect cutouts",
- "no warning about the large one-time model download; vercel.live third-party script on a privacy-pitch page"],
- "priorConcernsAddressed": "n/a"}
+{"tester": 4, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8, "topComplaints": ["Download button label still says '· white' after picking a custom Color — stale label makes me distrust what I'm actually exporting for a company asset", "Headline/subhead frame it entirely for eBay/Etsy/Poshmark resellers; nothing signals the slide/SharePoint-header use case, so a corporate user almost bounces as 'not for me'"], "priorConcernsAddressed": "n/a"}
 ```

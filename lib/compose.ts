@@ -1,5 +1,63 @@
 /** Pure helpers for compositing + cutout sanity checks (unit-tested). */
 
+/* ---------------------------------------------------------------------------
+ * Background-mode helpers (round 5: White | Color | Transparent export).
+ * No React / DOM dependencies — pure functions, fully unit-testable.
+ * ------------------------------------------------------------------------- */
+
+export type BgMode = "white" | "color" | "transparent";
+
+export const BG_COLOR_PRESETS = [
+  { label: "White", hex: "#ffffff" },
+  { label: "Black", hex: "#000000" },
+  { label: "Light gray", hex: "#d1d5db" },
+  { label: "Beige", hex: "#F5F0E6" },
+  { label: "Brand blue", hex: "#1d4ed8" },
+  { label: "Brand red", hex: "#dc2626" },
+] as const;
+
+/** Parse and validate a 6-digit hex color string. Returns normalized lowercase or null. */
+export function parseHex(raw: string): string | null {
+  const m = raw.trim().match(/^#?([0-9a-fA-F]{6})$/);
+  if (!m) return null;
+  return `#${m[1].toLowerCase()}`;
+}
+
+/** Resolve the composite fill arg from bgMode + bgColor.
+ *  Returns a CSS color string for White/Color, or null for Transparent. */
+export function resolveFill(bgMode: BgMode, bgColor: string): string | null {
+  if (bgMode === "transparent") return null;
+  if (bgMode === "white") return "#ffffff";
+  return bgColor;
+}
+
+/** Build the primary download button label. */
+export function primaryButtonLabel(
+  bgMode: BgMode,
+  bgColor: string,
+  dims: { w: number; h: number },
+  preset: { label: string },
+  exporting: boolean
+): string {
+  if (exporting) {
+    return bgMode === "transparent" ? "Preparing PNG…" : "Preparing JPEG…";
+  }
+  const sizeStr = `${dims.w}×${dims.h}`;
+  const marketStr = preset.label;
+  if (bgMode === "white") {
+    return `Download white JPEG — ${sizeStr} (${marketStr})`;
+  }
+  if (bgMode === "transparent") {
+    return `Download transparent PNG — ${sizeStr}`;
+  }
+  // color mode
+  const matchedSwatch = BG_COLOR_PRESETS.find(
+    (s) => s.hex.toLowerCase() === bgColor.toLowerCase()
+  );
+  const colorName = matchedSwatch ? matchedSwatch.label.toLowerCase() : bgColor;
+  return `Download JPEG on this background — ${sizeStr} (${marketStr}) · ${colorName}`;
+}
+
 export const MARGIN_MIN = 2;
 export const MARGIN_MAX = 15;
 export const MARGIN_DEFAULT = 6;

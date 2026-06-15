@@ -67,7 +67,7 @@ test.describe("UI shell (no inference)", () => {
       page.getByText("Drag & drop photos (up to 20) or click to upload")
     ).toBeVisible();
     await expect(
-      page.getByText("Your photo never leaves this device", { exact: false })
+      page.getByText(/Your photos never leave/i).first()
     ).toBeVisible();
     await expect(
       page.getByText("First photo downloads a one-time ~50 MB tool", {

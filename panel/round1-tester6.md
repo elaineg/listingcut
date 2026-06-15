@@ -1,46 +1,15 @@
-# Round 1 — Tester 6: Tom Brzezinski (63, woodworker, Etsy via daughter, iPad Safari, low tech)
-
-## Clarity — Yes
-I'd tell a friend at the fair: "You put in a photo of your piece and it takes the messy
-background out and gives you a clean white-background picture for Etsy." The big headline
-"Listing-ready product photos in your browser" plus the before/after mug picture (cluttered
-photo -> mug on white) told me everything before I touched anything. The word "Etsy" right
-in the subtitle is what made me trust it was for me. "Try the sample" was a nice way to see
-it work without risking one of my own photos.
-
-What confused me in the first 30 seconds: "JPEG or PNG" and "no upload" — I *am* uploading
-a photo, aren't I? My daughter says "upload" for putting a picture anywhere. The little
-green lock sentence helped more than that phrase did.
-
-## Value — Yes
-Today I either wait for my daughter to visit and fix my photos, or I put them up as-is and
-they look amateur next to other sellers. This took my photo of a bowl on my workbench and
-gave me a proper 2000x2000 white-background picture in about a minute, by myself, on my
-iPad. I tapped the upload box, picked the photo, tapped "Etsy 2000×2000", tapped Download.
-That is exactly the chore I've been waiting on her for. The cutout edge on my bowl looked
-clean. This is real saved time and, honestly, saved pride.
-
-## What tripped me up (be honest with the builders)
-1. After it finished, the first big button is "Download PNG (transparent)". I don't know
-   what a transparent PNG is, and the right-hand picture sat on a grey checkerboard that
-   looked like the photo was broken or hadn't loaded. I nearly downloaded that one for
-   Etsy. The Etsy/eBay buttons were further down the page — I only found them by scrolling.
-   The marketplace download should come FIRST and the "transparent" one should be tucked
-   away or explained ("for advanced editing").
-2. "Cutout (transparent)" as a caption — jargon. Call it "Background removed."
-3. Two different download buttons with no plain-words note on which one Etsy wants. One
-   line like "For Etsy listings, use this one" would settle it.
-
-## Advocacy — 8
-I would tell the other sellers at my Saturday fair about this — several of us have the same
-"my kid does my photos" arrangement. It did the job first try with no sign-up, which is rare.
-It's not a 9 because the page led me toward the wrong download ("Download PNG (transparent)"
-above the Etsy button) and the checkerboard made me think it had failed; if my daughter
-hadn't explained checkerboards to me once, I might have given up right there.
+---
+NAME: Jules
+CLARITY (understand what it does & how within ~30s cold?): Yes — "Remove the background... free, no upload, no signup" plus the mug before/after told me instantly; only hesitation is the headline ("Listing-ready product photos", eBay/Etsy/Poshmark) reads resale-seller, not social marketer like me.
+VALUE (would you actually use this for real work?): Yes — I cut subjects onto colored backgrounds at per-platform sizes constantly; custom hex + live preview + batch ZIP is literally my afternoon-of-one-offs collapsed into one no-login pass.
+ADVOCACY (1-10: likely to recommend to a peer): 8 — it nails the login-allergic, batch, colored-bg job better than my current dance; not a 9 because the copy frames it for marketplace sellers, so I'd have to tell a peer "ignore the eBay stuff, it does brand-color social graphics too."
+TOP FRICTION: Positioning + presets, not function. Everything on screen (headline, "white-bg listing photo", size presets named eBay/Etsy/Poshmark/Depop/Facebook) screams resale seller. My platforms are IG/X/LinkedIn/Stories — there's no IG square or 1080×1920 Story preset, so a non-square social size means typing into "Custom" every single time.
+WHAT WORKED: The Color background flow is exactly right — White/Color/Transparent tabs under "Export background", a swatch row, a #RRGGBB field, and a Live preview that recolored the mug to my pink the instant I typed #FF5DA2, with the download button echoing "· #ff5da2". And batch is real: dropped two photos, got "Download all (ZIP) — 2 photos", and it came down as a real zip with the color baked into each file (photo1-...-ff5da2.jpg).
+NEW-FEATURE TAKE: Discoverable, clear, and it did what I expected. Custom color + hex + swatches all drive the live preview and the download label together; margin slider is a nice extra. Batch ZIP respects BOTH the chosen color and the chosen size — clicking the Etsy chip flipped the ZIP to "Etsy 2000×2000" and the single download to 2000×2000. One snag: my first "Poshmark square" tap silently didn't register and for a moment I thought size wasn't applying to the ZIP; it does, the click just got eaten — but that flicker of doubt is exactly the kind of thing that loses trust on mobile.
+---
 
 ```json
 {"tester": 6, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8,
- "topComplaints": ["Transparent-PNG button appears before the Etsy/eBay download and the checkerboard preview looks broken to a non-technical user",
- "Jargon: 'Cutout (transparent)' / 'PNG' with no plain-language explanation of which file Etsy needs"],
+ "topComplaints": ["Positioning/copy + size presets are all marketplace-seller (eBay/Etsy/Poshmark); no Instagram/Story/social presets, so non-square social sizes need manual Custom entry every time", "A size chip click can silently miss, briefly making it look like size doesn't apply to the batch ZIP (it does)"],
  "priorConcernsAddressed": "n/a"}
 ```

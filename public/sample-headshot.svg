@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="800" viewBox="0 0 800 800">
+  <defs>
+    <linearGradient id="bg-hs" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7dd3fc"/>
+      <stop offset="1" stop-color="#2563eb"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f0c27f"/>
+      <stop offset="1" stop-color="#d4956a"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#334155"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+    <linearGradient id="hair-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3b1a05"/>
+      <stop offset="1" stop-color="#5c2d0a"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background: bright blue gradient — good contrast with warm-toned figure -->
+  <rect width="800" height="800" fill="url(#bg-hs)"/>
+
+  <!-- Shoulders / shirt — trapezoidal, fills lower portion -->
+  <path d="M160 800 L160 600 Q200 530 310 510 L400 510 L490 510 Q600 530 640 600 L640 800 Z" fill="url(#shirt)"/>
+
+  <!-- Neck -->
+  <rect x="360" y="450" width="80" height="80" rx="10" fill="url(#skin)"/>
+
+  <!-- Head: oval -->
+  <ellipse cx="400" cy="360" rx="155" ry="175" fill="url(#skin)"/>
+
+  <!-- Short, neat hair cap — tight to the head, no flyaways -->
+  <!-- Main hair shape: closely follows the top of the head oval -->
+  <path d="M255 340
+    Q245 220 310 160
+    Q360 120 400 115
+    Q440 120 490 160
+    Q555 220 545 340
+    Q530 290 510 270
+    Q490 220 450 200
+    Q420 185 400 185
+    Q380 185 350 200
+    Q310 220 290 270
+    Q270 290 255 340 Z"
+    fill="url(#hair-g)"/>
+
+  <!-- Ear left -->
+  <ellipse cx="247" cy="370" rx="20" ry="28" fill="url(#skin)"/>
+  <!-- Ear right -->
+  <ellipse cx="553" cy="370" rx="20" ry="28" fill="url(#skin)"/>
+
+  <!-- Eyes -->
+  <!-- Left eye -->
+  <ellipse cx="348" cy="340" rx="28" ry="18" fill="white"/>
+  <ellipse cx="350" cy="342" rx="16" ry="16" fill="#3b1a05"/>
+  <ellipse cx="355" cy="338" rx="5" ry="5" fill="#1a0a00"/>
+  <ellipse cx="360" cy="335" rx="3" ry="3" fill="white"/>
+  <!-- Right eye -->
+  <ellipse cx="452" cy="340" rx="28" ry="18" fill="white"/>
+  <ellipse cx="450" cy="342" rx="16" ry="16" fill="#3b1a05"/>
+  <ellipse cx="455" cy="338" rx="5" ry="5" fill="#1a0a00"/>
+  <ellipse cx="460" cy="335" rx="3" ry="3" fill="white"/>
+
+  <!-- Eyebrows — arched, short -->
+  <path d="M320 315 Q350 300 376 310" stroke="#3b1a05" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <path d="M424 310 Q450 300 480 315" stroke="#3b1a05" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+  <!-- Nose -->
+  <path d="M390 365 Q385 400 370 410 Q390 418 400 416 Q410 418 430 410 Q415 400 410 365 Z" fill="#c8845a"/>
+
+  <!-- Mouth — gentle smile -->
+  <path d="M355 445 Q400 468 445 445" stroke="#a0522d" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M362 448 Q400 460 438 448" stroke="#c0392b" stroke-width="3" fill="#d4705a" opacity="0.7"/>
+</svg>

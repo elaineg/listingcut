@@ -1,0 +1,14 @@
+---
+NAME: Aisha
+CLARITY: Yes — H1 "Remove any background — keep your photo on this device" + subhead "clean cutout on white, your brand color, or transparent — free, no upload, no signup" still nails it in <10s. The three hero tiles (White/Color/Transparent) now include a face tile under Transparent labeled "headshots & avatars", and the dropzone shows TWO worked examples side by side: "Your photo → Clean cutout (Try the sample)" mug and "Your headshot → Clean cutout (Try a headshot)" face. The face example is exactly what a designer scans for. Crystal clear.
+VALUE: Yes — Transparent PNG + margin slider gives me the deck/FigJam asset with no Photoshop, no signup, in one session. Color mode now defaults to a warm beige (#f5f0e6) AND the export button literally reads "Download JPEG on this background — 1080×1080 (Square) · beige", with a color input exposed to swap in a brand hex. That removes the old "I picked Color but nothing changed" beat — it's obviously a colored asset now and I can retint to brand in one click. Real save vs my PS round-trip.
+ADVOCACY (1-10): 8 — held at 8, honestly. The two new things are genuine UX wins (beige default + named export label = no dead-end; face example = better onboarding), but they're polish around the edges, not the edge itself. The bg-removal model is unchanged by design, so the fine-hair fringe that capped me at 8 in round 3 is still the cap. I'd still touch up a high-res hero. Considered, trustworthy, not yet a 9.
+PRIOR CONCERNS ADDRESSED?: The polish does NOT move me off 8 — and here's the brutally honest catch: the "Try a headshot" sample is a flat ILLUSTRATED avatar (solid hair shape, hard outline), not a real photo with wispy flyaways. So the new face example demonstrates the easy case and sidesteps my exact concern; it does not let me judge real-hair edge quality from the sample. The edge is still the ceiling. The honest "Touch up to refine" framing remains and is still the right call.
+TOP FRICTION: The face sample is a clean vector avatar, so it can't show me how the model handles real wispy hair — the one thing I'd want a face example to prove. The cap is the raw model's fine-hair fringe (unchanged, defensibly). Nothing's broken.
+WHAT WORKED: The beige Color default with the self-describing export label ("· beige") plus an exposed color picker — it kills the "nothing happened" confusion and lets me retint to a brand color in one move. That's a considered, designer-respecting fix.
+---
+```json
+{"tester": 7, "round": 4, "clarity": "Yes", "value": "Yes", "advocacy": 8,
+ "topComplaints": ["Face sample is a flat illustrated avatar, not a real photo — it can't demonstrate the model's real wispy-hair edge, which is the one thing a headshot example should prove", "Raw fine-hair edge quality is unchanged by design and remains the quality ceiling; high-res hero still needs a touch-up pass"],
+ "priorConcernsAddressed": "some"}
+```

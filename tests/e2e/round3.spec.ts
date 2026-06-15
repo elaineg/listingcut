@@ -67,15 +67,16 @@ async function whitePngBuffer(page: Page): Promise<Buffer> {
 }
 
 test.describe("round-3 static checks (no inference)", () => {
-  test("subtitle names all five marketplaces; guidelines line; margin slider shell", async ({
+  test("all five marketplace presets visible; guidelines line; margin slider shell", async ({
     page,
   }) => {
     await page.goto("/");
 
-    // Subtitle names eBay, Etsy, Poshmark, Depop, Facebook.
-    await expect(
-      page.getByText("eBay, Etsy, Poshmark, Depop, or Facebook", { exact: false })
-    ).toBeVisible();
+    // All five marketplace presets are visible as chips on the page (round-6 reframe:
+    // they moved from the subtitle to the preset group, but still present).
+    for (const chip of ["eBay 1600×1600", "Etsy 2000×2000", "Poshmark square", "Depop 1280×1280", "Facebook 1200×1200"]) {
+      await expect(page.getByRole("radio", { name: chip }).first()).toBeVisible();
+    }
     // Supporting line cites eBay's photo guidelines (no invented stats).
     await expect(
       page.getByText(/photo guidelines recommend a clean white\s+background/)
@@ -84,7 +85,7 @@ test.describe("round-3 static checks (no inference)", () => {
     // Margin slider: visible in the shell, 2–15 range, default 6, disabled
     // until a cutout exists.
     const slider = page.getByRole("slider", {
-      name: "Margin — space around the product",
+      name: "Margin — space around the subject",
     });
     await expect(slider).toBeVisible();
     await expect(slider).toBeDisabled();
@@ -110,7 +111,7 @@ test.describe("round-3 full flow", () => {
 
     // --- Margin slider: changes export composition + live preview ----------
     const slider = page.getByRole("slider", {
-      name: "Margin — space around the product",
+      name: "Margin — space around the subject",
     });
     await expect(slider).toBeEnabled();
     await expect(slider).toHaveValue("6");

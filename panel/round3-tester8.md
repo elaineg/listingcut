@@ -1,51 +1,12 @@
-# Round 3 — Tester 8 (Priya Patel, Shopify/eBay seller, Windows laptop + Chrome)
-
-## Prior concerns from round 2 — were they fixed?
-1. **ZIP exports one preset at a time — NOT FIXED.** The ZIP button still follows whichever
-   single preset is selected ("Download all (ZIP) — 2 photos, Etsy 2000×2000"). To get my
-   eBay 1600 AND Shopify 2000 sizes I still download two ZIPs. Minor, same as before.
-2. **Queue thumbnails too small to review a batch — NOT FIXED.** The queue rows still show
-   ~48px thumbnails. Clicking a row swaps the big preview one photo at a time, same as round
-   2. No grid/lightbox to eyeball all cutouts at full size before zipping.
-
-## NEW PROBLEM — the round-1 shadow smudge is BACK, and it's in every export
-I dropped 4 phone-case photos (case on a beige table with a cast shadow — same kind of shot
-as rounds 1 and 2). This time ALL FOUR exported eBay JPEGs kept a big brown shadow blob under
-the product, and because the blob widens the crop, the case sits crammed in the top-left with
-a huge empty white area to the right and below. None of these four is listable on eBay. In
-round 2 this exact scenario came out clean — this is a regression of my original dealbreaker.
-The Touch up tool (Erase/Restore/Pan, zoom, checker/white/dark preview) does exist and could
-hand-erase the blob, but erasing 20 photos one by one is exactly the labor I pay Fiverr to
-avoid. Also, on my first batch, photo 1 of 4 errored with "Failed to fetch" after the model
-download; a Retry button fixed it (good touch), but the second full run took ~3 minutes for 4
-photos, slower than round 2's ~42 seconds for 3.
-
-## Clarity — Yes
-Unchanged and still strong: "Free in-browser tool that cuts the background off product photos
-and gives you white-background JPEGs sized for eBay/Etsy/Poshmark — batches of 20, ZIP
-download, nothing uploaded anywhere." Headline, mug before/after, "free, no upload, no
-signup", and "Drag & drop photos (up to 20)" tell the whole story in 30 seconds.
-
-## Value — Marginal
-Today: Fiverr, $15 per 20 photos, 2-day turnaround. Round 2 this app genuinely beat that. This
-round it didn't: every photo in my batch came back with a dirty brown shadow blob and bad
-framing, so my choices are hand-erasing each one in Touch up (the manual labor I'm paying to
-skip) or sending the batch to Fiverr anyway. The batch+ZIP plumbing is still great — the
-cutout quality is what regressed, and cutout quality is the entire product.
-
-## Advocacy — 4
-Last round I was at 9 and ready to post it in my reseller group. I'm glad I didn't, because if
-a friend ran her batch and got brown blobs under all 20 products, that's my credibility gone.
-Held back by: (a) the shadow smudge regression on every photo in my batch — round 1's
-dealbreaker, returned; (b) exports off-center with dead white space because the crop includes
-the blob; (c) a "Failed to fetch" flake on first run (Retry saved it); (d) my two round-2 asks
-(multi-size ZIP, batch review view) untouched. Fix the cutout consistency and I'm back to 9 —
-the rest of the product is already there.
-
+---
+NAME: Rob
+CLARITY: Yes — H1 "Remove any background — keep your photo on this device" + "clean cutout on white, your brand color, or transparent — free, no upload, no signup" + the three labeled tiles (White/listings, Color/ads & social, Transparent/slides & mockups) still land it in 10s: a no-signup, client-side brand-asset cutout tool. No change needed here.
+VALUE: Yes — set background + brand hex + marketplace size ONCE and the "Download all (ZIP) — N photos, <size>" fans it across the whole batch with preset-named files. I re-ran it this round with 2 real photos and the ZIP came back portrait-hair-square-1080x1080.jpg + fuzzy-square-1080x1080.jpg. That still beats re-doing #hex twenty times in my Photoshop loop for volume.
+ADVOCACY (1-10): 8 — I finally tested it on a REAL portrait with flyaway hair, and the body/face/maroon-top silhouette is genuinely clean with no halo, but the auto-cutout clips the fine curl tips and wisps to a hard outline — exactly the failure mode I flagged. So the 8 is no longer "untested fear," it's "confirmed limitation." Touch-up is real and honest, but it's a manual Erase/Restore brush per image, not hair matting — it can't move me to 9 for volume because hand-painting hair on 20 client assets/week erases the time win that made me consider switching.
+PRIOR CONCERNS ADDRESSED?: Partially — and honestly, no for my use case. The Touch-up affordance is now discoverable and honestly worded ("Hair or edges not perfect? Use Touch up to fix spots the auto-cutout missed — erase leftover smudges or restore clipped edges") with Erase/Restore/Pan, a brush-size slider, Undo, and Checker/White/Dark preview — a legitimately good manual repair tool that makes the hair shortfall fixable on a single hero image. But it does NOT offset the hair uncertainty for CLIENT VOLUME: the auto model still clips fine hair, and the only remedy is manual brushwork one image at a time. For hard-edged products it's a clear win; for headshots / anything with hair at batch scale it stays an 8.
+TOP FRICTION: Auto-cutout fine-hair quality at volume — it clips wisps/curl tips, and the only fix is per-image manual touch-up, which doesn't scale. (They chose not to upsize the model to keep the ~50MB download small; understandable, but it's the ceiling for my hair/fabric work.)
+WHAT WORKED: Two things compounded — the proven one-time-setup batch ZIP (hex + size set once, applied to every file, named by preset) AND the honest, capable Touch-up brush. Together they make this a confident YES for hard-edged client assets; only fine hair at batch holds the score.
+---
 ```json
-{"tester": 8, "round": 3, "clarity": "Yes", "value": "Marginal", "advocacy": 4,
- "topComplaints": ["Shadow smudge regression: brown cast-shadow blob left in ALL 4 exported JPEGs, product off-center with dead white space",
- "One photo failed with 'Failed to fetch' on first batch (Retry worked)",
- "Round-2 asks unaddressed: ZIP is one preset at a time; no full-size batch review view"],
- "priorConcernsAddressed": "none"}
+{"tester": 8, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 8, "topComplaints": ["auto-cutout clips fine hair/wisps; only fix is per-image manual touch-up, which doesn't scale for client volume", "Touch-up is manual brushwork per image, not hair matting — great for one hero shot, not for 20 assets/week"], "priorConcernsAddressed": "some"}
 ```

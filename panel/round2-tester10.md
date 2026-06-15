@@ -1,49 +1,9 @@
-# Round 2 — Tester 10: Helen Marsh (47, office manager, sells on Facebook Marketplace, Samsung A54 / Chrome)
-
-## Prior concerns — were they fixed?
-1. **No Facebook Marketplace preset** — FIXED. There's now a "Facebook 1200×1200" button right
-   in the marketplace row. I tapped it and the download was literally named
-   `couch-facebook-1200x1200.jpg`. That's me. Thank you.
-2. **Leftover smudges, no eraser** — FIXED. New "Touch up" button on the result card with plain
-   words: "Erase removes leftover smudges or shadows, Restore paints the product back." I rubbed
-   my finger over the floaty bits at the top and they were gone in the next download. Undo and a
-   size slider too. Simple enough that I didn't need anyone to explain it.
-3. **Transparent PNG was the big button** — FIXED. Now the big blue button is "Download white
-   JPEG — 1200×1200 (Facebook)" and the transparent one is a quiet second button with a note:
-   "most marketplaces want the white JPEG above." Exactly the order my brain works in.
-4. **~50 MB download / empty grey preview box** — PARTLY FIXED. The 50 MB is still there, but
-   now it warns me before I even pick a photo ("First photo downloads a one-time ~50 MB tool —
-   after that it's fast"), so it's my choice. And the live preview actually shows my photo on
-   white now instead of an empty grey square.
-
-## Clarity — Yes
-I'd tell a friend: "It takes your for-sale photo, wipes out your messy room, and gives you the
-thing on a clean white background, sized for Facebook or eBay. Free, runs on your phone, no
-sign-up." The headline plus the before/after sample made it obvious within seconds, same as
-last time. One leftover niggle: the tagline still says "eBay & Poshmark feature white-background
-photos" — Facebook isn't mentioned until you scroll to the size buttons, so a Facebook seller
-skimming the top might still wonder if it's for them.
-
-## Value — Yes
-Today I do nothing — straight from camera roll to Marketplace. Facebook doesn't require white
-backgrounds, so this is still a want, not a need. But: photo in, tap Facebook, erase a couple of
-smudges with my finger, download — about two minutes for a photo that looks like a store listing
-instead of a crime scene. There is no other way I'd get that result; I'm not learning Photoshop.
-The smudge eraser is what tipped it from Marginal to Yes — last time the output wasn't postable,
-this time it was.
-
-## Advocacy — 8
-I'd genuinely recommend it when a friend moans about their listing photos looking bad, and
-that conversation happens. Not a 9 because: (a) the auto-cutout still leaves smudges I have to
-erase by hand — better than no eraser, but finger-erasing on a phone screen is a little fiddly;
-(b) the 50 MB first-run download would still scare off friends on tight data plans, even with
-the warning; (c) the top of the page still pitches "eBay & Poshmark" — say "Facebook
-Marketplace" up there and people like me would relax immediately.
-
-```json
-{"tester": 10, "round": 2, "clarity": "Yes", "value": "Yes", "advocacy": 8,
- "topComplaints": ["Auto-cutout still leaves smudges that need manual finger-erasing (eraser works, but it's fiddly on a phone)",
- "~50 MB first-run model download is still heavy on mobile data, even with the upfront warning",
- "Hero tagline still says 'eBay & Poshmark' — Facebook Marketplace isn't mentioned until the preset buttons"],
- "priorConcernsAddressed": "all"}
-```
+---
+NAME: Sam
+CLARITY: Yes — cold on my phone the headline "Remove any background — keep your photo on this device" plus "transparent for slides & mockups" told me in seconds it's a background tool I can use for decks, not just listings.
+VALUE: Yes — I drop product shots/screenshots onto clean white or our brand blue for stakeholder decks a few times a month, and this did it free, no login, on a 375px screen, and now lands a real 1920×1080 "Slide 16:9" file instead of a square I'd have to crop.
+ADVOCACY (1-10): 8 — I'd now actually pitch it to fellow PMs ("free no-login bg remover with a 16:9 slide preset and brand-color picker"), but the preset list still opens with a MARKETPLACES block (eBay/Etsy/Poshmark/Depop) and the default download still reads "(eBay)", so slides still aren't the first thing a cold PM sees — that's what keeps it off a 9.
+PRIOR CONCERNS ADDRESSED?: Yes, mostly. The slide/deck path is real now: "Slide 16:9 (1920×1080)" exists, sits in a dedicated SOCIAL & OTHER group with Custom no longer buried after the marketplace presets, and the download label updates synchronously (picking Slide flips it to "...1920×1080 (Slide 16:9)" instantly; choosing Color no longer makes the button read a bare misleading "white"). Seller framing is reduced in the headline/subhead but NOT eliminated lower down.
+TOP FRICTION: Size presets still lead with MARKETPLACES and the default export is "Download white JPEG — 1600×1600 (eBay)" — a PM has to scroll past four resale sites to reach the slide preset, and the leftover "eBay's own photo guidelines recommend a clean white background" line under the subhead keeps quietly signaling "this is for sellers."
+WHAT WORKED: One tap on "Try the sample" → ~12s → clean cutout, then Color → brand hex field → Slide 16:9 gave me a deck-ready 1920×1080 export auto-named with size+hex (sample-mug-custom-2000x2000-ffffff.jpg style), all client-side with the "never leaves this device" badge that kills the legal/stakeholder question.
+---

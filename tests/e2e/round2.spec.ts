@@ -93,7 +93,7 @@ test.describe("round-2 features", () => {
       page.getByRole("button", { name: "Download product.png as white JPEG" })
     ).toBeVisible();
 
-    // ZIP button appears once 2+ are done; default preset is eBay 1600×1600.
+    // ZIP button appears once 2+ are done; default preset is Square 1080×1080 (round-3 panel: neutral default).
     const zipBtn = page.getByRole("button", { name: /Download all \(ZIP\)/ });
     await expect(zipBtn).toBeVisible();
     await expect(zipBtn).toContainText("2 photos");
@@ -104,6 +104,7 @@ test.describe("round-2 features", () => {
     expect(zipDl.suggestedFilename()).toMatch(/\.zip$/);
 
     // Parse the ZIP in node: one white JPEG per photo at the preset size.
+    // Default preset is now Square 1080×1080 (neutral default, round-3 panel change).
     const JSZip = (await import("jszip")).default;
     const zip = await JSZip.loadAsync(readFileSync((await zipDl.path())!));
     const names = Object.keys(zip.files).filter((n) => !zip.files[n].dir);
@@ -111,7 +112,7 @@ test.describe("round-2 features", () => {
     for (const name of names) {
       expect(name).toMatch(/\.jpg$/);
       const buf = await zip.files[name].async("nodebuffer");
-      expect(jpegSize(buf)).toEqual({ width: 1600, height: 1600 });
+      expect(jpegSize(buf)).toEqual({ width: 1080, height: 1080 });
     }
 
     // --- New presets ------------------------------------------------------

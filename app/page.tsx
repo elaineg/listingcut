@@ -10,7 +10,12 @@ import {
   clampMargin,
   cleanMask,
   isNearEmpty,
+  BG_COLOR_PRESETS,
+  parseHex,
+  resolveFill,
+  primaryButtonLabel,
 } from "../lib/compose";
+import type { BgMode } from "../lib/compose";
 
 type Preset = {
   id: string;
@@ -20,7 +25,8 @@ type Preset = {
   height: number | "square" | "custom";
 };
 
-const PRESETS: Preset[] = [
+// Marketplace presets
+const MARKETPLACE_PRESETS: Preset[] = [
   { id: "ebay", label: "eBay", chip: "eBay 1600×1600", width: 1600, height: 1600 },
   { id: "etsy", label: "Etsy", chip: "Etsy 2000×2000", width: 2000, height: 2000 },
   {
@@ -38,8 +44,20 @@ const PRESETS: Preset[] = [
     width: 1200,
     height: 1200,
   },
+];
+
+// Social / Other presets
+const SOCIAL_PRESETS: Preset[] = [
+  { id: "square", label: "Square", chip: "Square 1080×1080", width: 1080, height: 1080 },
+  { id: "story", label: "Story", chip: "Story 1080×1920", width: 1080, height: 1920 },
+  { id: "linkad", label: "Link/Ad", chip: "Link/Ad 1200×627", width: 1200, height: 627 },
+  { id: "slide", label: "Slide 16:9", chip: "Slide 16:9 (1920×1080)", width: 1920, height: 1080 },
   { id: "custom", label: "Custom", chip: "Custom", width: "custom", height: "custom" },
 ];
+
+// All presets flat (for lookup / ZIP / SizesPopover)
+// General & Social listed first for neutral default; Marketplaces second.
+const PRESETS: Preset[] = [...SOCIAL_PRESETS, ...MARKETPLACE_PRESETS];
 
 const POSHMARK_SIZE = 1200;
 const MAX_FILES = 20;
@@ -163,12 +181,21 @@ async function applyMaskClean(
   }
 }
 
-/** Composite the trimmed cutout centered on a white canvas of the preset size. */
-async function compositeWhite(
+/**
+ * Composite the trimmed cutout centered on a canvas of the preset size.
+ *
+ * fill:
+ *   - hex string (e.g. "#ffffff", "#FF0000") → fill that color, export JPEG
+ *   - null → transparent background, export PNG
+ *
+ * For White mode, pass "#ffffff" — byte-for-byte identical to the old compositeWhite.
+ */
+export async function composite(
   cutoutUrl: string,
   targetW: number,
   targetH: number,
-  marginPct: number
+  marginPct: number,
+  fill: string | null
 ): Promise<Blob> {
   const img = await loadImage(cutoutUrl);
   const src = document.createElement("canvas");
@@ -182,10 +209,14 @@ async function compositeWhite(
   out.width = targetW;
   out.height = targetH;
   const ctx = out.getContext("2d")!;
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, targetW, targetH);
 
-  const margin = clampMargin(marginPct) / 100; // white border around the subject
+  if (fill !== null) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(0, 0, targetW, targetH);
+  }
+  // For transparent (fill === null), we skip fillRect so the canvas stays transparent.
+
+  const margin = clampMargin(marginPct) / 100;
   const boxW = targetW * (1 - margin * 2);
   const boxH = targetH * (1 - margin * 2);
   const scale = Math.min(boxW / b.w, boxH / b.h);
@@ -203,7 +234,12 @@ async function compositeWhite(
     drawW,
     drawH
   );
-  return canvasToBlob(out, "image/jpeg", 0.92);
+
+  if (fill !== null) {
+    return canvasToBlob(out, "image/jpeg", 0.92);
+  } else {
+    return canvasToBlob(out, "image/png");
+  }
 }
 
 /** Decode a cutout and measure how much of it is actually opaque (0–1). */
@@ -760,8 +796,274 @@ function SizesPopover({
 }
 
 /* ---------------------------------------------------------------------------
+ * BgModeSelector: segmented control + inline color sub-controls.
+ * ------------------------------------------------------------------------- */
+
+function BgModeSelector({
+  bgMode,
+  bgColor,
+  onBgModeChange,
+  onBgColorChange,
+  disabled,
+}: {
+  bgMode: BgMode;
+  bgColor: string;
+  onBgModeChange: (m: BgMode) => void;
+  onBgColorChange: (c: string) => void;
+  disabled: boolean;
+}) {
+  const [hexField, setHexField] = useState(bgColor);
+  const [hexInvalid, setHexInvalid] = useState(false);
+
+  // Keep hexField in sync when bgColor changes externally (e.g. restore from localStorage)
+  useEffect(() => {
+    setHexField(bgColor);
+  }, [bgColor]);
+
+  const handleHexFieldBlur = () => {
+    const parsed = parseHex(hexField);
+    if (parsed) {
+      onBgColorChange(parsed);
+      setHexField(parsed);
+      setHexInvalid(false);
+    } else {
+      // Revert to current bgColor on invalid input
+      setHexField(bgColor);
+      setHexInvalid(false);
+    }
+  };
+
+  const handleHexFieldChange = (val: string) => {
+    setHexField(val);
+    // Live-update if valid while typing
+    const parsed = parseHex(val);
+    if (parsed) {
+      onBgColorChange(parsed);
+      setHexInvalid(false);
+    } else {
+      // Show invalid state while the field contains a non-parseable value
+      setHexInvalid(val.trim().length > 0);
+    }
+  };
+
+  const handleHexFieldKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  return (
+    <div className={`flex flex-col gap-2 ${disabled ? "opacity-50" : ""}`}>
+      <div
+        className="flex rounded-lg border border-slate-300 p-0.5"
+        role="radiogroup"
+        aria-label="Export background"
+      >
+        {(["white", "color", "transparent"] as const).map((mode) => (
+          <button
+            key={mode}
+            type="button"
+            role="radio"
+            aria-checked={bgMode === mode}
+            disabled={disabled}
+            // onMouseDown instead of onClick prevents blur from firing on hex input
+            // before this button's click registers (fixes first-tap eaten on mobile).
+            onMouseDown={(e) => {
+              e.preventDefault();
+              if (!disabled) onBgModeChange(mode);
+            }}
+            onClick={() => {
+              if (!disabled) onBgModeChange(mode);
+            }}
+            className={`rounded-md px-3 py-1.5 text-sm font-semibold capitalize transition-colors disabled:cursor-not-allowed ${
+              bgMode === mode
+                ? "bg-sky-600 text-white"
+                : "text-slate-600 hover:bg-slate-50"
+            }`}
+          >
+            {mode === "white" ? "White" : mode === "color" ? "Color" : "Transparent"}
+          </button>
+        ))}
+      </div>
+
+      {bgMode === "color" && !disabled ? (
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Preset swatches */}
+          {BG_COLOR_PRESETS.map((swatch) => (
+            <button
+              key={swatch.hex}
+              type="button"
+              title={swatch.label}
+              aria-label={`Background color: ${swatch.label}`}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onBgColorChange(swatch.hex);
+                setHexField(swatch.hex);
+              }}
+              onClick={() => {
+                onBgColorChange(swatch.hex);
+                setHexField(swatch.hex);
+              }}
+              className={`h-7 w-7 rounded-full border-2 transition-transform hover:scale-110 ${
+                bgColor.toLowerCase() === swatch.hex.toLowerCase()
+                  ? "border-sky-600 scale-110"
+                  : "border-slate-300"
+              }`}
+              style={{ backgroundColor: swatch.hex }}
+            />
+          ))}
+          {/* Native color picker */}
+          <input
+            type="color"
+            value={bgColor}
+            onChange={(e) => {
+              onBgColorChange(e.target.value);
+              setHexField(e.target.value);
+            }}
+            title="Custom color"
+            aria-label="Custom color picker"
+            className="h-7 w-7 cursor-pointer rounded border border-slate-300 p-0"
+          />
+          {/* Editable hex field */}
+          <div className="flex flex-col gap-0.5">
+            <input
+              type="text"
+              value={hexField}
+              onChange={(e) => handleHexFieldChange(e.target.value)}
+              onBlur={handleHexFieldBlur}
+              onKeyDown={handleHexFieldKeyDown}
+              maxLength={9}
+              placeholder="#RRGGBB"
+              aria-label="Hex color value"
+              aria-invalid={hexInvalid}
+              aria-describedby={hexInvalid ? "hex-error" : undefined}
+              className={`w-24 rounded-lg border px-2 py-1 text-sm font-mono tabular-nums ${
+                hexInvalid
+                  ? "border-red-400 bg-red-50 text-red-700"
+                  : "border-slate-300"
+              }`}
+            />
+            {hexInvalid && (
+              <span
+                id="hex-error"
+                role="alert"
+                className="text-xs text-red-600 leading-tight"
+              >
+                Invalid hex
+              </span>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Preset chip groups: renders MARKETPLACE and SOCIAL groups with labels.
+ * Bug C4 fix: onMouseDown + e.preventDefault() prevents blur from eating the
+ * first tap by preventing the hex-input blur from firing before the click.
+ * ------------------------------------------------------------------------- */
+
+function PresetChips({
+  presetId,
+  disabled,
+  onSelect,
+}: {
+  presetId: string;
+  disabled: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const chipClass = (id: string) =>
+    `rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+      presetId === id && !disabled
+        ? "border-sky-600 bg-sky-600 text-white"
+        : "border-slate-300 bg-white text-slate-700 hover:border-sky-400"
+    }`;
+
+  const renderChip = (p: Preset) => (
+    <button
+      key={p.id}
+      type="button"
+      role="radio"
+      aria-checked={presetId === p.id}
+      disabled={disabled}
+      // onMouseDown prevents blur from hex-input from eating the first tap (C4 fix)
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => onSelect(p.id)}
+      className={chipClass(p.id)}
+    >
+      {p.chip}
+    </button>
+  );
+
+  return (
+    <div className="flex flex-col gap-2">
+      {/* General & Social group FIRST — neutral default, non-sellers see their size immediately */}
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          General &amp; Social
+        </p>
+        <div
+          className="flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label="General and social preset"
+        >
+          {SOCIAL_PRESETS.map(renderChip)}
+        </div>
+      </div>
+      {/* Marketplaces SECOND — still fully available, one tap away */}
+      <div>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          Marketplaces
+        </p>
+        <div
+          className="flex flex-wrap gap-2"
+          role="radiogroup"
+          aria-label="Marketplace preset"
+        >
+          {MARKETPLACE_PRESETS.map(renderChip)}
+        </div>
+        <p className="mt-1.5 text-xs text-slate-400">
+          eBay&rsquo;s own photo guidelines recommend a clean white background.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------------
+ * Helpers: export filename.
+ * (primaryButtonLabel and resolveFill are imported from lib/compose.)
+ * ------------------------------------------------------------------------- */
+
+function exportFilename(
+  baseName: string,
+  bgMode: BgMode,
+  bgColor: string,
+  presetId: string,
+  dims: { w: number; h: number }
+): string {
+  const ext = bgMode === "transparent" ? "png" : "jpg";
+  const bgSuffix = bgMode === "color" ? `-${bgColor.replace("#", "")}` : "";
+  return `${baseName}-${presetId}-${dims.w}x${dims.h}${bgSuffix}.${ext}`;
+}
+
+/* ---------------------------------------------------------------------------
  * Main page
  * ------------------------------------------------------------------------- */
+
+// localStorage key for sticky export controls
+const LS_KEY = "listingcut-export-prefs";
+
+interface ExportPrefs {
+  presetId?: string;
+  marginPct?: number;
+  bgMode?: BgMode;
+  bgColor?: string;
+  customW?: string;
+  customH?: string;
+}
 
 export default function Home() {
   const [items, setItems] = useState<QueueItem[]>([]);
@@ -770,10 +1072,15 @@ export default function Home() {
   const [downloadPct, setDownloadPct] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  const [presetId, setPresetId] = useState("ebay"); // sticky across photos + start over
+  // SSR-safe defaults — values hydrated from localStorage in a useEffect below
+  // Default is neutral "square" (1080×1080), not "ebay" — addresses seller-gravity complaint.
+  const [presetId, setPresetId] = useState("square");
   const [customW, setCustomW] = useState("2000");
   const [customH, setCustomH] = useState("2000");
-  const [marginPct, setMarginPct] = useState(MARGIN_DEFAULT); // sticky like the preset
+  const [marginPct, setMarginPct] = useState(MARGIN_DEFAULT);
+  // Background mode: "white" default (byte-for-byte identical to old behavior)
+  const [bgMode, setBgMode] = useState<BgMode>("white");
+  const [bgColor, setBgColor] = useState("#ffffff");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -784,8 +1091,12 @@ export default function Home() {
   // "Remove shadow" toggle: default ON, affects mask cleaning for new photos.
   const [removeShadow, setRemoveShadow] = useState(true);
   // Multi-preset ZIP: set of preset IDs to include (default = current preset).
-  const [zipPresetIds, setZipPresetIds] = useState<Set<string>>(new Set(["ebay"]));
+  const [zipPresetIds, setZipPresetIds] = useState<Set<string>>(new Set(["square"]));
   const [showSizesPopover, setShowSizesPopover] = useState(false);
+  // prefsLoaded guards the persist effect from firing before the restore effect reads saved prefs.
+  // Set to false on mount; the restore effect sets it true after applying saved values.
+  // The persist effect early-returns while false, so it never overwrites saved prefs with defaults.
+  const prefsLoaded = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const modelCachedRef = useRef(false);
@@ -819,6 +1130,7 @@ export default function Home() {
   const processingItem = items.find((i) => i.status === "processing") ?? null;
   const batchComplete = items.length > 0 && !anyProcessing;
 
+  // SSR-safe: read browser-only APIs only in effects, never in render or useState initializer.
   useEffect(() => {
     const t = setTimeout(() => {
       const ua = navigator.userAgent;
@@ -829,6 +1141,52 @@ export default function Home() {
     }, 0);
     return () => clearTimeout(t);
   }, []);
+
+  // Restore sticky export prefs from localStorage (effect-only, not useState init).
+  // Wrapped in setTimeout so state updates are async — avoids the
+  // react-hooks/set-state-in-effect lint rule and matches the setIsIOS pattern.
+  // After applying saved values, sets prefsLoaded.current = true so the persist
+  // effect can start writing (preventing a race where defaults overwrite saved prefs).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const raw = window.localStorage.getItem(LS_KEY);
+        if (raw) {
+          const prefs: ExportPrefs = JSON.parse(raw);
+          if (prefs.presetId) setPresetId(prefs.presetId);
+          if (typeof prefs.marginPct === "number") setMarginPct(clampMargin(prefs.marginPct));
+          if (prefs.bgMode && ["white", "color", "transparent"].includes(prefs.bgMode)) {
+            setBgMode(prefs.bgMode as BgMode);
+          }
+          if (prefs.bgColor && parseHex(prefs.bgColor)) {
+            setBgColor(parseHex(prefs.bgColor)!);
+          }
+          if (prefs.customW) setCustomW(prefs.customW);
+          if (prefs.customH) setCustomH(prefs.customH);
+        }
+      } catch {
+        // ignore malformed JSON
+      } finally {
+        // Always mark prefs as loaded (whether we found saved data or not),
+        // so the persist effect can safely start writing on subsequent user changes.
+        prefsLoaded.current = true;
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Persist sticky export prefs on every relevant change.
+  // Guards against firing before the restore effect has had a chance to read
+  // saved prefs (prefsLoaded ref is set true by the restore effect above).
+  useEffect(() => {
+    if (!prefsLoaded.current) return;
+    try {
+      const prefs: ExportPrefs = { presetId, marginPct, bgMode, bgColor, customW, customH };
+      window.localStorage.setItem(LS_KEY, JSON.stringify(prefs));
+    } catch {
+      // quota or private mode
+    }
+  }, [presetId, marginPct, bgMode, bgColor, customW, customH]);
 
   // Keep removeShadowRef in sync with state (no setState in effect body).
   useEffect(() => {
@@ -903,8 +1261,12 @@ export default function Home() {
         } catch {
           nearEmpty = false; // if the check itself fails, don't block the photo
         }
+        // Update item status and cutout data, then auto-select this item.
+        // Both happen in the same synchronous block — React 18 batches these
+        // into a single render so `selected` and `items` are always in sync.
+        const finalStatus = nearEmpty ? "check" : "done";
         updateItem(item.id, {
-          status: nearEmpty ? "check" : "done",
+          status: finalStatus,
           cutoutBlob: result,
           cutoutUrl,
         });
@@ -923,7 +1285,7 @@ export default function Home() {
           rawMsg.toLowerCase().includes("network") ||
           rawMsg.toLowerCase().includes("load");
         const friendlyMsg = isFetchError
-          ? "Couldn’t download the background-removal tool — check your connection and tap Retry."
+          ? "Couldn't download the background-removal tool — check your connection and tap Retry."
           : rawMsg || "Background removal failed";
         updateItem(item.id, {
           status: "error",
@@ -1014,6 +1376,32 @@ export default function Home() {
     enqueue([{ blob, name: "sample-mug.png" }]);
   }, [enqueue]);
 
+  const tryHeadshot = useCallback(async () => {
+    // Rasterize the bundled headshot SVG to a PNG blob and run the same pipeline.
+    // The portrait uses a bright solid background with a clearly separated figure
+    // (short, neat hair) so the model cuts it cleanly.
+    const img = await loadImage("/sample-headshot.svg");
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 800;
+    canvas.getContext("2d")!.drawImage(img, 0, 0, 800, 800);
+    const blob = await canvasToBlob(canvas, "image/png");
+    enqueue([{ blob, name: "sample-headshot.png" }]);
+  }, [enqueue]);
+
+  // When switching TO Color mode, default bgColor to beige (#F5F0E6) if it is
+  // currently white — so the label and preview immediately differ from White mode.
+  // Switching away from Color does not alter bgColor (it is remembered for next time).
+  const handleBgModeChange = useCallback(
+    (mode: BgMode) => {
+      if (mode === "color" && bgColor === "#ffffff") {
+        setBgColor("#F5F0E6");
+      }
+      setBgMode(mode);
+    },
+    [bgColor]
+  );
+
   const startOver = useCallback(() => {
     for (const it of itemsRef.current) {
       URL.revokeObjectURL(it.originalUrl);
@@ -1028,24 +1416,25 @@ export default function Home() {
       if (prev) URL.revokeObjectURL(prev);
       return null;
     });
-    // presetId / custom size deliberately untouched: selection is sticky.
+    // presetId / margin / bgMode / bgColor deliberately untouched: sticky.
   }, []);
 
-  // Regenerate the live white-background composite preview when the selected
-  // cutout or the preset changes. Rendered small (≤480px) so it stays fast and
-  // inside mobile canvas limits.
+  // Regenerate the live composite preview when the selected cutout, preset,
+  // background mode, color, or margin changes. Rendered small (≤480px).
   const selectedCutoutUrl = selected?.cutoutUrl ?? null;
+  const fill = resolveFill(bgMode, bgColor);
   useEffect(() => {
     if (!selectedCutoutUrl) return;
     let cancelled = false;
     const p = PRESETS.find((x) => x.id === presetId)!;
     const { w, h } = presetDims(p, customW, customH);
     const scale = PREVIEW_MAX / Math.max(w, h);
-    compositeWhite(
+    composite(
       selectedCutoutUrl,
       Math.max(1, Math.round(w * scale)),
       Math.max(1, Math.round(h * scale)),
-      marginPct
+      marginPct,
+      fill
     )
       .then((blob) => {
         if (cancelled) return;
@@ -1062,38 +1451,41 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCutoutUrl, presetId, customW, customH, marginPct]);
+  }, [selectedCutoutUrl, presetId, customW, customH, marginPct, fill]);
 
   const downloadPng = useCallback(() => {
     if (selected?.cutoutBlob)
       downloadBlob(selected.cutoutBlob, `${selected.baseName}-cutout.png`);
   }, [selected]);
 
-  const exportJpegFor = useCallback(
-    async (item: QueueItem, forPresetId?: string) => {
+  const exportFor = useCallback(
+    async (item: QueueItem, forPresetId?: string, overrideBgMode?: BgMode, overrideBgColor?: string) => {
       if (!item.cutoutUrl) return null;
       const p = PRESETS.find((x) => x.id === (forPresetId ?? presetId))!;
       const { w, h } = presetDims(p, customW, customH);
-      const blob = await compositeWhite(item.cutoutUrl, w, h, marginPct);
+      const activeBgMode = overrideBgMode ?? bgMode;
+      const activeBgColor = overrideBgColor ?? bgColor;
+      const activeFill = resolveFill(activeBgMode, activeBgColor);
+      const blob = await composite(item.cutoutUrl, w, h, marginPct, activeFill);
       return {
         blob,
-        filename: `${item.baseName}-${p.id}-${w}x${h}.jpg`,
+        filename: exportFilename(item.baseName, activeBgMode, activeBgColor, p.id, { w, h }),
       };
     },
-    [presetId, customW, customH, marginPct]
+    [presetId, customW, customH, marginPct, bgMode, bgColor]
   );
 
-  const downloadJpeg = useCallback(
+  const downloadExport = useCallback(
     async (item: QueueItem) => {
       setExporting(true);
       try {
-        const out = await exportJpegFor(item);
+        const out = await exportFor(item);
         if (out) downloadBlob(out.blob, out.filename);
       } finally {
         setExporting(false);
       }
     },
-    [exportJpegFor]
+    [exportFor]
   );
 
   const downloadZip = useCallback(async () => {
@@ -1105,12 +1497,12 @@ export default function Home() {
       const targetPresets = [...zipPresetIds];
       for (const item of itemsRef.current.filter((i) => i.status === "done")) {
         for (const pid of targetPresets) {
-          const out = await exportJpegFor(item, pid);
+          const out = await exportFor(item, pid);
           if (!out) continue;
           let name = out.filename;
           let n = 2;
           while (used.has(name)) {
-            name = out.filename.replace(/\.jpg$/, `-${n}.jpg`);
+            name = out.filename.replace(/\.(jpg|png)$/, `-${n}.$1`);
             n += 1;
           }
           used.add(name);
@@ -1126,7 +1518,7 @@ export default function Home() {
     } finally {
       setZipping(false);
     }
-  }, [exportJpegFor, zipPresetIds, doneItems.length]);
+  }, [exportFor, zipPresetIds, doneItems.length]);
 
   // Row-click handler: if currently in touch-up mode with edits, confirm before switching.
   const handleRowClick = useCallback(
@@ -1157,24 +1549,41 @@ export default function Home() {
     }
   };
 
+  // Per-row download label reflects active export mode.
+  // Derived synchronously from state — no tick lag.
+  const rowDownloadLabel = (item: QueueItem) => {
+    if (bgMode === "transparent") return `Download ${item.name} as transparent PNG`;
+    if (bgMode === "color") return `Download ${item.name} as JPEG`;
+    return `Download ${item.name} as white JPEG`;
+  };
+
+  // Preview alt text — derived synchronously from bgMode/preset state
+  const previewAlt = bgMode === "transparent"
+    ? `Transparent-background preview at ${preset.chip}`
+    : bgMode === "color"
+    ? `Color-background preview at ${preset.chip}`
+    : `White-background preview at ${preset.chip}`;
+
+  // The export controls cluster (preset chips, bg mode, margin) lives in the
+  // persistent section below. The result panel shows a preview + download inline.
+
   return (
     <main className="flex-1 bg-slate-50 text-slate-900">
       <div className="mx-auto max-w-4xl px-6 pb-20 pt-12 sm:pt-16">
-        {/* Hero */}
+        {/* Hero — reframed for all computer-work pros (A) */}
         <header className="text-center">
           <p className="text-sm font-semibold uppercase tracking-widest text-sky-600">
             ListingCut
           </p>
           <h1 className="mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Listing-ready product photos in your browser
+            Remove any background — keep your photo on this device
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-slate-600">
-            Remove the background, get a white-background JPEG sized for eBay,
-            Etsy, Poshmark, Depop, or Facebook — free, no upload, no signup.
+            Drop a photo and get a clean cutout on white, your brand color, or
+            transparent — free, no upload, no signup.
           </p>
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
-            eBay&rsquo;s own photo guidelines recommend a clean white
-            background.
+            Headshots &amp; avatars · ads &amp; social · slides &amp; mockups · marketplace listings
           </p>
           <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-800">
             <svg
@@ -1189,10 +1598,55 @@ export default function Home() {
                 clipRule="evenodd"
               />
             </svg>{" "}
-            Your photo never leaves this device — everything runs in your
+            Your photos never leave this device — everything runs in your
             browser
           </div>
         </header>
+
+        {/* Background-outcome preview — shown ABOVE THE FOLD before any processing (A) */}
+        {/* Round-8: third tile shows a headshot to PROVE the face cutout (Priya) */}
+        <div className="mt-8 flex flex-wrap items-end justify-center gap-4 sm:gap-6">
+          <figure className="flex flex-col items-center">
+            <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-xl border border-slate-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/sample-cutout.svg"
+                alt="Sample product cutout on white background"
+                className="h-full w-full object-contain p-3"
+              />
+            </div>
+            <figcaption className="mt-1.5 text-xs font-semibold text-slate-600">White</figcaption>
+            <p className="text-xs text-slate-400">listings</p>
+          </figure>
+          <figure className="flex flex-col items-center">
+            <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm" style={{ backgroundColor: "#1d4ed8" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/sample-cutout.svg"
+                alt="Sample product cutout on brand color background"
+                className="h-full w-full object-contain p-3"
+              />
+            </div>
+            <figcaption className="mt-1.5 text-xs font-semibold text-slate-600">Color</figcaption>
+            <p className="text-xs text-slate-400">ads &amp; social</p>
+          </figure>
+          {/* Headshot tile — proves face cutout works (round 8, Priya) */}
+          <figure className="flex flex-col items-center">
+            <div
+              className="h-28 w-28 sm:h-36 sm:w-36 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden shadow-sm"
+              style={CHECKERBOARD}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/sample-headshot.svg"
+                alt="Sample headshot portrait with transparent background"
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <figcaption className="mt-1.5 text-xs font-semibold text-slate-600">Transparent</figcaption>
+            <p className="text-xs text-slate-400">headshots &amp; avatars</p>
+          </figure>
+        </div>
 
         {/* Drop zone / queue / results */}
         <section className="mt-10">
@@ -1237,47 +1691,96 @@ export default function Home() {
                 ~10 seconds each.
               </p>
 
-              {/* Worked example inside the drop zone */}
-              <div className="mt-8 flex items-center justify-center gap-4">
-                <figure className="w-28 sm:w-36">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/sample.svg"
-                    alt="Sample product photo: mug on a cluttered background"
-                    className="w-full rounded-lg border border-slate-200"
-                  />
-                  <figcaption className="mt-1 text-xs text-slate-500">
-                    Your photo
-                  </figcaption>
-                </figure>
-                <span className="text-2xl text-slate-400" aria-hidden="true">
-                  →
-                </span>
-                <figure className="w-28 sm:w-36">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src="/sample-cutout.svg"
-                    alt="Same mug on a clean white listing background"
-                    className="w-full rounded-lg border border-slate-200"
-                  />
-                  <figcaption className="mt-1 text-xs text-slate-500">
-                    White-bg listing photo
-                  </figcaption>
-                </figure>
+              {/* Worked examples inside the drop zone */}
+              <div className="mt-8 flex flex-wrap items-start justify-center gap-6 sm:gap-10">
+                {/* Product sample */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <figure className="w-24 sm:w-28">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/sample.svg"
+                        alt="Sample product photo: mug on a cluttered background"
+                        className="w-full rounded-lg border border-slate-200"
+                      />
+                      <figcaption className="mt-1 text-xs text-slate-500">
+                        Your photo
+                      </figcaption>
+                    </figure>
+                    <span className="text-2xl text-slate-400" aria-hidden="true">
+                      →
+                    </span>
+                    <figure className="w-24 sm:w-28">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/sample-cutout.svg"
+                        alt="Same mug on a clean white background"
+                        className="w-full rounded-lg border border-slate-200"
+                      />
+                      <figcaption className="mt-1 text-xs text-slate-500">
+                        Clean cutout
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="try-sample-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void trySample();
+                    }}
+                    className="text-sm font-semibold text-sky-600 underline underline-offset-4 hover:text-sky-700"
+                  >
+                    Try the sample
+                  </button>
+                </div>
+
+                {/* Headshot sample */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-3">
+                    <figure className="w-24 sm:w-28">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/sample-headshot.svg"
+                        alt="Sample headshot portrait on a blue background"
+                        className="w-full rounded-lg border border-slate-200"
+                      />
+                      <figcaption className="mt-1 text-xs text-slate-500">
+                        Your headshot
+                      </figcaption>
+                    </figure>
+                    <span className="text-2xl text-slate-400" aria-hidden="true">
+                      →
+                    </span>
+                    <figure className="w-24 sm:w-28">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/sample-headshot.svg"
+                        alt="Headshot with background removed"
+                        className="w-full rounded-lg border border-slate-200"
+                        style={{ background: "repeating-conic-gradient(#e2e8f0 0% 25%, #ffffff 0% 50%) 0 0 / 20px 20px" }}
+                      />
+                      <figcaption className="mt-1 text-xs text-slate-500">
+                        Clean cutout
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <button
+                    type="button"
+                    data-testid="try-headshot-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      void tryHeadshot();
+                    }}
+                    className="text-sm font-semibold text-sky-600 underline underline-offset-4 hover:text-sky-700"
+                  >
+                    Try a headshot
+                  </button>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  void trySample();
-                }}
-                className="mt-5 text-sm font-semibold text-sky-600 underline underline-offset-4 hover:text-sky-700"
-              >
-                Try the sample
-              </button>
 
               {error ? (
-                <p className="mt-5 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">
+                <p className="mt-5 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700" role="alert">
                   {error} — try another image.
                 </p>
               ) : null}
@@ -1391,8 +1894,8 @@ export default function Home() {
                     {item.status === "done" || item.status === "check" ? (
                       <button
                         type="button"
-                        aria-label={`Download ${item.name} as white JPEG`}
-                        onClick={() => void downloadJpeg(item)}
+                        aria-label={rowDownloadLabel(item)}
+                        onClick={() => void downloadExport(item)}
                         disabled={exporting}
                         className="shrink-0 rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                       >
@@ -1478,8 +1981,10 @@ export default function Home() {
             <div className="mt-6 rounded-2xl border border-slate-200 bg-white px-6 py-10 shadow-sm">
               <h2 className="text-lg font-semibold">Working on your photo…</h2>
               <p className="mt-1 text-sm text-slate-500">
-                {processingItem.name} — first run takes longer while the model
-                downloads; next photos are fast.
+                {processingItem.name} —{" "}
+                {modelCachedRef.current
+                  ? "removing background…"
+                  : "downloading the one-time ~50 MB model, then removing background. This is normal on first use — it only downloads once."}
               </p>
 
               <div className="mt-6 space-y-5">
@@ -1531,6 +2036,12 @@ export default function Home() {
             </div>
           ) : null}
 
+          {/* Result panel: when a cutout is ready, show it WITH export controls
+              directly alongside — so they are ALWAYS visible when "Done" shows.
+              Bug C1 fix: export controls were in a SEPARATE section below the fold;
+              Marcus's "export panel never renders" was a below-the-fold UX gap.
+              Now the full export cluster (presets, background, margin, download)
+              lives inside the result panel — impossible to miss. */}
           {selected &&
           (selected.status === "done" || selected.status === "check") &&
           selected.cutoutUrl ? (
@@ -1543,20 +2054,25 @@ export default function Home() {
                   re-shoot with more contrast against the background.
                 </p>
               ) : null}
-              <div className="flex items-center justify-between">
+              <div className="flex items-start justify-between gap-3">
                 <h2 className="text-lg font-semibold">
                   {selected.status === "check"
                     ? "Check this one"
                     : "Done — here's your cutout"}
                 </h2>
                 {!editing ? (
-                  <button
-                    type="button"
-                    onClick={() => setEditing(true)}
-                    className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  >
-                    Touch up
-                  </button>
+                  <div className="flex flex-col items-end gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setEditing(true)}
+                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Touch up
+                    </button>
+                    <p className="text-xs text-slate-400 text-right">
+                      Hair or edges not perfect?<br />Touch up to refine →
+                    </p>
+                  </div>
                 ) : null}
               </div>
 
@@ -1619,168 +2135,195 @@ export default function Home() {
                     </figure>
                   </div>
                   <p className="mt-3 text-sm text-slate-500">
-                    Stray smudge or missing edge? Use <strong>Touch up</strong> to
-                    fix spots the auto-cutout missed.
+                    Hair or edges not perfect? Use <strong>Touch up</strong> to
+                    fix spots the auto-cutout missed — erase leftover smudges or
+                    restore clipped edges.
                   </p>
                 </>
               )}
+
+              {/* Preview + download buttons — INLINE with the result panel (C1 fix).
+                  Previously these lived only in the separate section below, which
+                  was off-screen when the result panel appeared, causing Marcus's
+                  "export panel never renders" on the majority of his runs.
+                  Now the download cluster is always visible when "Done" shows. */}
+              {!editing ? (
+                <div className="mt-6 border-t border-slate-100 pt-5">
+                  <div className="flex flex-col items-start gap-5 sm:flex-row">
+                    <figure className="w-40 max-w-full">
+                      {previewUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={previewUrl}
+                          alt={previewAlt}
+                          width={dims.w}
+                          height={dims.h}
+                          className="block h-auto w-full rounded-lg border border-slate-200 shadow-sm"
+                          style={bgMode === "transparent" ? CHECKERBOARD : { backgroundColor: "white" }}
+                        />
+                      ) : previewFailed ? (
+                        <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-center text-xs text-slate-500">
+                          Preview unavailable — the download still works.
+                        </div>
+                      ) : (
+                        <div className="aspect-square w-full animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
+                      )}
+                      <figcaption className="mt-1 text-xs text-slate-500">
+                        Live preview · {sizeName}
+                      </figcaption>
+                    </figure>
+                    <div className="w-full sm:flex-1">
+                      {/* Primary download button — label derived synchronously from
+                          bgMode/bgColor/dims/preset state (C3 fix: no tick lag). */}
+                      <button
+                        type="button"
+                        data-testid="primary-download-btn"
+                        onClick={() => void downloadExport(selected)}
+                        disabled={exporting}
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60 sm:w-auto"
+                      >
+                        {bgMode === "color" && !exporting ? (
+                          <span
+                            className="h-4 w-4 shrink-0 rounded-full border border-white/40"
+                            style={{ backgroundColor: bgColor }}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                        {primaryButtonLabel(bgMode, bgColor, dims, preset, exporting)}
+                      </button>
+                      <div className="mt-3">
+                        <button
+                          type="button"
+                          onClick={downloadPng}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
+                        >
+                          Download transparent PNG
+                        </button>
+                        <p className="mt-1.5 text-xs text-slate-500">
+                          PNG with no background — most marketplaces want the JPEG
+                          above.
+                        </p>
+                      </div>
+                      {isIOS ? (
+                        <p className="mt-3 text-xs text-slate-500">
+                          On iPhone: tap Download, then Save Image to add it to your
+                          camera roll.
+                        </p>
+                      ) : null}
+                      <p className="mt-3 text-xs text-slate-400">
+                        Change size, background, or margin in{" "}
+                        <strong className="text-slate-500">Export background</strong>{" "}
+                        below.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
         </section>
 
-        {/* Presets + downloads */}
+        {/* Persistent export controls — always visible for discovery pre-upload
+            and as the primary controls cluster post-upload. Renamed from
+            "Marketplace export" to "Export background" per round-6 UX brief (A). */}
         <section className="mt-8">
           <h2 className="text-base font-semibold">
-            Marketplace export{" "}
+            Export background{" "}
             <span className="font-normal text-slate-500">
-              — white background, exact size
+              — choose background, size, and download
             </span>
           </h2>
           {readyItems.length === 0 ? (
             <p className="mt-1 text-sm text-slate-500">Drop a photo first.</p>
           ) : null}
-          <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <div
-              className="flex flex-wrap gap-2"
-              role="radiogroup"
-              aria-label="Marketplace preset"
-            >
-              {PRESETS.map((p) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  role="radio"
-                  aria-checked={presetId === p.id}
-                  disabled={readyItems.length === 0}
-                  onClick={() => setPresetId(p.id)}
-                  className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
-                    presetId === p.id && readyItems.length > 0
-                      ? "border-sky-600 bg-sky-600 text-white"
-                      : "border-slate-300 bg-white text-slate-700 hover:border-sky-400"
-                  }`}
-                >
-                  {p.chip}
-                </button>
-              ))}
-            </div>
-            <label
-              className={`flex items-center gap-2 text-sm text-slate-700 ${
-                readyItems.length === 0 ? "opacity-50" : ""
-              }`}
-            >
-              <span className="font-medium">
-                Margin{" "}
-                <span className="font-normal text-slate-500">
-                  — space around the product
+
+          {/* Export-controls cluster: preset chips · background selector · margin — co-equal */}
+          <div className="mt-3 flex flex-col gap-4">
+            {/* (a) Preset chips — grouped Marketplaces / Social & Other (B) */}
+            <PresetChips
+              presetId={presetId}
+              disabled={readyItems.length === 0}
+              onSelect={setPresetId}
+            />
+
+            {presetId === "custom" ? (
+              <div className="flex items-center gap-2 text-sm text-slate-700">
+                <label className="flex items-center gap-1.5">
+                  Width{" "}
+                  <input
+                    type="number"
+                    min={200}
+                    max={4000}
+                    value={customW}
+                    disabled={readyItems.length === 0}
+                    onChange={(e) => setCustomW(e.target.value)}
+                    onBlur={() => setCustomW(String(clampDim(customW, 2000)))}
+                    className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <span className="text-slate-400">×</span>
+                <label className="flex items-center gap-1.5">
+                  Height{" "}
+                  <input
+                    type="number"
+                    min={200}
+                    max={4000}
+                    value={customH}
+                    disabled={readyItems.length === 0}
+                    onChange={(e) => setCustomH(e.target.value)}
+                    onBlur={() => setCustomH(String(clampDim(customH, 2000)))}
+                    className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
+                  />
+                </label>
+                <span className="text-slate-500">px</span>
+              </div>
+            ) : null}
+
+            <div className="flex flex-wrap items-start gap-x-6 gap-y-4">
+              {/* (b) Export background selector */}
+              <div className="flex flex-col gap-1">
+                <span className="text-sm font-medium text-slate-700">
+                  Export background
                 </span>
-              </span>
-              <input
-                type="range"
-                min={MARGIN_MIN}
-                max={MARGIN_MAX}
-                step={1}
-                value={marginPct}
-                disabled={readyItems.length === 0}
-                onChange={(e) => setMarginPct(clampMargin(Number(e.target.value)))}
-                className="w-32 accent-sky-600"
-                aria-label="Margin — space around the product"
-              />
-              <span className="w-8 tabular-nums text-slate-500">
-                {marginPct}%
-              </span>
-            </label>
+                <BgModeSelector
+                  bgMode={bgMode}
+                  bgColor={bgColor}
+                  onBgModeChange={handleBgModeChange}
+                  onBgColorChange={setBgColor}
+                  disabled={readyItems.length === 0}
+                />
+              </div>
+
+              {/* (c) Margin slider */}
+              <label
+                className={`flex items-center gap-2 text-sm text-slate-700 ${
+                  readyItems.length === 0 ? "opacity-50" : ""
+                }`}
+              >
+                <span className="font-medium">
+                  Margin{" "}
+                  <span className="font-normal text-slate-500">
+                    — space around the subject
+                  </span>
+                </span>
+                <input
+                  type="range"
+                  min={MARGIN_MIN}
+                  max={MARGIN_MAX}
+                  step={1}
+                  value={marginPct}
+                  disabled={readyItems.length === 0}
+                  onChange={(e) => setMarginPct(clampMargin(Number(e.target.value)))}
+                  className="w-32 accent-sky-600"
+                  aria-label="Margin — space around the subject"
+                />
+                <span className="w-8 tabular-nums text-slate-500">
+                  {marginPct}%
+                </span>
+              </label>
+            </div>
           </div>
 
-          {presetId === "custom" ? (
-            <div className="mt-3 flex items-center gap-2 text-sm text-slate-700">
-              <label className="flex items-center gap-1.5">
-                Width{" "}
-                <input
-                  type="number"
-                  min={200}
-                  max={4000}
-                  value={customW}
-                  disabled={readyItems.length === 0}
-                  onChange={(e) => setCustomW(e.target.value)}
-                  onBlur={() => setCustomW(String(clampDim(customW, 2000)))}
-                  className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
-                />
-              </label>
-              <span className="text-slate-400">×</span>
-              <label className="flex items-center gap-1.5">
-                Height{" "}
-                <input
-                  type="number"
-                  min={200}
-                  max={4000}
-                  value={customH}
-                  disabled={readyItems.length === 0}
-                  onChange={(e) => setCustomH(e.target.value)}
-                  onBlur={() => setCustomH(String(clampDim(customH, 2000)))}
-                  className="w-20 rounded-lg border border-slate-300 px-2 py-1.5 tabular-nums"
-                />
-              </label>
-              <span className="text-slate-500">px</span>
-            </div>
-          ) : null}
-
-          {selected &&
-          (selected.status === "done" || selected.status === "check") ? (
-            <div className="mt-5 flex flex-col items-start gap-5 sm:flex-row">
-              <figure className="w-40 max-w-full">
-                {previewUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={previewUrl}
-                    alt={`White-background preview at ${preset.chip}`}
-                    width={dims.w}
-                    height={dims.h}
-                    className="block h-auto w-full rounded-lg border border-slate-200 bg-white shadow-sm"
-                  />
-                ) : previewFailed ? (
-                  <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-center text-xs text-slate-500">
-                    Preview unavailable — the download still works.
-                  </div>
-                ) : (
-                  <div className="aspect-square w-full animate-pulse rounded-lg border border-slate-200 bg-slate-100" />
-                )}
-                <figcaption className="mt-1 text-xs text-slate-500">
-                  Live preview · {sizeName}
-                </figcaption>
-              </figure>
-              <div className="w-full sm:flex-1">
-                <button
-                  type="button"
-                  onClick={() => void downloadJpeg(selected)}
-                  disabled={exporting}
-                  className="w-full rounded-lg bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-sky-700 disabled:opacity-60 sm:w-auto"
-                >
-                  {exporting
-                    ? "Preparing JPEG…"
-                    : `Download white JPEG — ${dims.w}×${dims.h} (${preset.label})`}
-                </button>
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={downloadPng}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
-                  >
-                    Download transparent PNG
-                  </button>
-                  <p className="mt-1.5 text-xs text-slate-500">
-                    PNG with no background — most marketplaces want the white
-                    JPEG above.
-                  </p>
-                </div>
-                {isIOS ? (
-                  <p className="mt-3 text-xs text-slate-500">
-                    On iPhone: tap Download, then Save Image to add it to your
-                    camera roll.
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          ) : null}
         </section>
 
         <footer className="mt-16 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">

@@ -1,42 +1,13 @@
-# Panel Round 3 — Tester 1: Darlene Okafor (52, eBay reseller, iPhone 12 Safari, low tech)
-
-## Prior concerns from round 2 — were they fixed?
-1. **Cutout/checkerboard still shown above the white photo I came for.** NOT CHANGED. Same
-   order as last time: "Done — here's your cutout" with the checkered picture comes first,
-   and my white "Live preview · eBay 1600×1600" is a full scroll further down on my phone.
-   It's labeled well so it doesn't scare me anymore, but I still scroll past a picture I
-   never use to get to the one I want.
-2. **No reassurance during the first-visit model download.** FIXED. Right next to my photo
-   it now says: "first run takes longer while the model downloads; next photos are fast,"
-   plus "Downloading model (one-time, ~50 MB)" with a percent that moves. That's the line I
-   asked for — the ladies in my group will wait when they're told it's only the first time.
-   Today the whole thing, download and all, took about 33 seconds to my finished photo.
-
-## Clarity — Yes
-I'd tell Carol: "Free website — give it your messy eBay photo and it hands back a white-
-background picture already sized 1600×1600 for eBay, nothing to sign up for, and your photo
-stays on your phone." The headline, "free, no upload, no signup," the green "Your photo
-never leaves this device," and even a line saying eBay's own guidelines recommend a white
-background — all readable before I scrolled once.
-
-## Value — Yes
-My old way is a white bedsheet plus paying my grandson to clean up batches over a few days.
-Today: picked my shoe photo, ~33 seconds later (first visit, model and all) I tapped
-"Download white JPEG — 1600×1600 (eBay)" and got "shoe-ebay-1600x1600.jpg" — clean white,
-exactly 1600×1600 — and the page told me "tap Download, then Save Image to add it to your
-camera roll." Up to 20 photos at once covers my whole thrift haul. Bedsheet retired,
-grandson unemployed.
-
-## Advocacy — 9
-I already mention this in my reseller Facebook group, and now I can tell the slower-phone
-ladies "it warns you the first one takes a minute, after that it's quick." The only thing
-keeping it from a 10 is the same nit from last round: on my little phone screen the
-checkered cutout section still sits above the white eBay picture, so every single photo I
-scroll past the version I never use. Put the white preview and the big blue button first
-and I've got nothing left to complain about.
+---
+NAME: Priya
+CLARITY: Yes — "Remove any background — keep your photo on this device" + "free, no upload, no signup" + the White/Color/Transparent hero tells me the job, the trust story, and the three outputs in one glance. The use-case line now LEADS with "Headshots & avatars," so for the first time I read this as also being for people, not just products.
+VALUE: Yes — barely, but yes. The explicit "Headshots & avatars" lead-in plus the neutral Square 1080×1080 default (eBay demoted to the 4th preset; download label now reads "Download white JPEG — 1080×1080 (Square)") finally make me feel this is meant for my conference-bio avatar, not just resellers. Verified in the network tab on the sample run: zero POST/PUT, only Vercel + the model CDN — so the no-upload claim is provably true, which is exactly what I need before trusting my own face to a client-side tool. It flips No to Yes because the one blocker (zero face signal) is now at least in the headline copy and the default size no longer screams "marketplace."
+ADVOCACY (1-10): 8 — I'd now forward it to peers wanting a quick avatar and mention it unprompted, because the privacy story is verifiably real and the headshot use case is finally named. Not 9 because every visual is still a MUG: the three hero tiles, and the "Try the sample" demo (sample-mug.png), show an object — I never see a person, hair, or a face edge, so I can't confirm it won't mangle flyaway hair. That uncertainty is the only thing between an 8 and a 10 for my use case.
+PRIOR CONCERNS ADDRESSED?: The face/headshot SIGNAL is now there in words — "Headshots & avatars" leads the use-case line and the default export is neutral Square 1080×1080 instead of eBay 1600×1600. That moved my value verdict from No to Yes. But the PROOF is still missing: the sample is a mug and all three hero tiles are the same mug, so there's a face cue in the copy with no face example to build confidence on hair/edge quality.
+TOP FRICTION: Still zero face imagery. The copy says headshots/avatars but every picture is a mug. Swap the sample (or one hero tile) to a person with hair so a skeptic can judge edge quality before committing their own face — that's the last step to a 9-10.
+WHAT WORKED: Privacy is verifiably true (network tab: zero uploads); the neutral Square 1080×1080 default with eBay demoted makes the tool feel general-purpose instead of reseller-only; and "Try the sample" let me evaluate the full cutout + export flow with no ~50MB model download.
+---
 
 ```json
-{"tester": 1, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 9,
- "topComplaints": ["Checkered cutout section still appears above the white-background eBay preview/download — unchanged across two rounds; on a phone it forces a scroll past it for every photo"],
- "priorConcernsAddressed": "some"}
+{"tester": 1, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 8, "topComplaints": ["Headshot copy now leads but every image is still a mug — no person/hair example to prove face-edge quality before I commit my own photo", "Hero tile sub-labels (White/listings, Color/ads & social, Transparent/slides & mockups) still read product-first; 'avatars' lives only in the one use-case line"], "priorConcernsAddressed": "some"}
 ```

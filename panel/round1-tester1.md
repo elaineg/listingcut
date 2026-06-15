@@ -1,43 +1,13 @@
-# Panel Round 1 — Tester 1: Darlene Okafor (52, eBay reseller, iPhone 12 Safari, low tech)
-
-## Clarity — Yes
-I'd tell my friend Carol: "It's a free site that takes the junk out of the background of
-your eBay photos and gives you the white background, the right size, no account needed."
-The big headline plus the line "Remove the background, get a white-background JPEG sized
-for eBay, Etsy, or Poshmark — free, no upload, no signup" told me everything before I
-scrolled. The green "Your photo never leaves this device" note made me feel okay using my
-own pictures. Words that confused me: "Cutout (transparent)" with that gray checkerboard —
-I thought something went wrong until I saw the "Marketplace export — white background"
-section below it, which is the part I actually want.
-
-## Value — Yes
-Today I drape a white bedsheet over a chair, fuss with the lighting, and when it still
-looks gray and wrinkly I pay my grandson five dollars to clean a batch up in some app —
-that takes days because he's busy. Here I picked my photo, waited, tapped "eBay
-1600×1600," tapped "Download 1600×1600 JPEG," and got a genuinely white background at the
-exact eBay size. That replaces both the bedsheet fussing and the grandson. Real caveats
-from my session:
-- The first time, the "Downloading model (one-time, ~50 MB)" bar crawled and after two
-  minutes I still had nothing — honestly I would have closed the tab right there. My
-  second try it took about 25–35 seconds. If I'd hit the slow time first on my real
-  phone plan, this review would be very different.
-- The file downloads like a document. On my iPhone that means it goes to Files, not my
-  camera roll, and the eBay app pulls photos from the camera roll. Nobody on the page
-  tells me how to get it into Photos — I'd be calling my grandson anyway for that step.
-
-## Advocacy — 8
-I would tell the ladies in my reseller Facebook group about this, because "free, no
-sign-up, makes the background white" is exactly what we all complain about. What keeps it
-from a 9 or 10:
-1. The slow first load — one of my two tries sat past 2 minutes on "Downloading model
-   (one-time, ~50 MB) 67%." I have low patience; I nearly quit, and my friends would.
-2. No help getting the downloaded picture into my iPhone camera roll / the eBay app —
-   the last step of my actual job is missing a hint (even one sentence would do).
-3. Jargon: "PNG (transparent)," "model," and the checkerboard preview made me doubt
-   myself for a moment. Lead with the white-background result, not the transparent one.
+---
+NAME: Priya
+CLARITY (do you understand what it does & how, within ~30s cold?): Yes — the h1 + subhead ("Remove the background, get a white-background JPEG sized for eBay, Etsy... free, no upload, no signup") and the before/after mug told me exactly what it does in 5 seconds; the lock-banner "Your photo never leaves this device" answered my first question before I asked it.
+VALUE (would you actually use this for your real work?): No — every word, preset, and the sample image is aimed at marketplace sellers; my actual need is a headshot on a solid color for a GitHub/conf bio, which technically works via Color mode, but nothing signals it's for people, and I won't trust a product-tuned cutout model on the edges of my face.
+ADVOCACY (1-10: how likely to recommend to a peer): 6 — I'd forward it to a friend who sells on Etsy in a heartbeat, but I would not bring it up unprompted to my engineering peers because it isn't pitched at us; the genuinely verifiable privacy story is the only thing keeping this above a 4.
+TOP FRICTION: Positioning, not bugs — it's 100% "product photos for sellers," the wrong audience for me, so I'd never come here for a headshot. Secondary nit: when I typed hex #1E2A38 the preview re-rendered to navy instantly but the download-button label still read "...· white" for a beat (label lags the picker), which made me open the file to confirm before trusting it.
+WHAT WORKED: The privacy claim is REAL and I verified it in the network tab — zero POST/PUT, the image is never uploaded; the only external host is staticimgly.com (the model CDN) plus vercel. That's exactly the "nothing leaves my browser" promise, and it earns trust where 90% of free background removers don't. Bonus: the download filename encodes size+hex (sample-mug-ebay-1600x1600-1e2a38.jpg) — an engineer notices that.
+NEW-FEATURE TAKE: Discoverable and clear — White / Color / Transparent sit right under the size presets; Color opens a native picker plus a hex field plus swatches, and the preview re-renders instantly. It did exactly what I expected: typed a hex, got that solid background, downloaded the JPEG. Only friction is the label-vs-picker lag above. This feature is the ONE thing that makes the app usable for my solid-color-headshot case — but it's buried under seller framing, so I'd never have known to come here for it.
+---
 
 ```json
-{"tester": 1, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8,
- "topComplaints": ["First-use model download is slow and variable (one try exceeded 2 min — I would have closed the tab)", "Downloaded JPEG lands in Files, not iPhone camera roll; no guidance for getting it into the eBay app", "Transparent 'Cutout (transparent)' checkerboard preview shown first is confusing — white-background result should lead"],
- "priorConcernsAddressed": "n/a"}
+{"tester": 1, "round": 1, "clarity": "Yes", "value": "No", "advocacy": 6, "topComplaints": ["Positioning is 100% marketplace-seller; nothing signals it works for headshots/avatars, my actual use case", "Color-mode hex applied to the preview instantly but the download-button label briefly lagged showing the prior color name"], "priorConcernsAddressed": "n/a"}
 ```

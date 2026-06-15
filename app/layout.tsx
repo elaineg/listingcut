@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ListingCut — Listing-ready product photos in your browser",
+  title: "ListingCut — Remove any background, free in your browser",
   description:
-    "Remove the background, get a white-background JPEG sized for eBay, Etsy, or Poshmark — free, no upload, no signup.",
+    "Drop a photo and get a clean cutout on white, your brand color, or transparent — free, no upload, no signup. Works for listings, ads, slides, and mockups.",
 };
 
 export default function RootLayout({

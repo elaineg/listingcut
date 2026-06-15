@@ -10,6 +10,7 @@ import {
   dropSmallBlobs,
   suppressShadows,
   cleanMask,
+  primaryButtonLabel,
 } from "../../lib/compose";
 
 describe("clampMargin", () => {
@@ -229,5 +230,49 @@ describe("cleanMask", () => {
     const out = cleanMask(data, 1, 1, { removeShadow: false });
     // Shadow suppression off → pixel kept
     expect(out[3]).toBe(120);
+  });
+});
+
+/* ---------------------------------------------------------------------------
+ * primaryButtonLabel — Color mode label fix (round-8 panel-4, CHANGE 2).
+ * Ensures Color mode never reads "Download white JPEG" even when bgColor=#ffffff,
+ * and reads correctly for named swatches (beige) and custom hex.
+ * --------------------------------------------------------------------------- */
+const SQUARE_PRESET = { label: "Square" };
+const DIMS_1080 = { w: 1080, h: 1080 };
+
+describe("primaryButtonLabel — Color mode (round-8 panel-4 fix)", () => {
+  it("Color mode with beige (#F5F0E6) reads 'JPEG on this background … beige'", () => {
+    const label = primaryButtonLabel("color", "#F5F0E6", DIMS_1080, SQUARE_PRESET, false);
+    expect(label).toContain("this background");
+    expect(label).toMatch(/beige/i);
+    expect(label).not.toMatch(/Download white JPEG/i);
+  });
+
+  it("Color mode with white (#ffffff) reads 'JPEG on this background … white' (NOT 'Download white JPEG')", () => {
+    // Even if bgColor happens to be #ffffff in Color mode, the label is
+    // 'Download JPEG on this background … white' — NOT 'Download white JPEG'.
+    // This distinction matters: 'Download white JPEG' is the White-mode label.
+    const label = primaryButtonLabel("color", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
+    expect(label).toContain("this background");
+    expect(label).not.toMatch(/^Download white JPEG/i);
+    // The word "white" may appear as a swatch suffix but the mode-identifying phrase must differ.
+    expect(label).toMatch(/JPEG on this background/i);
+  });
+
+  it("Color mode with custom hex (#1d4ed8) reads 'JPEG on this background'", () => {
+    const label = primaryButtonLabel("color", "#1d4ed8", DIMS_1080, SQUARE_PRESET, false);
+    expect(label).toContain("this background");
+    expect(label).not.toMatch(/Download white JPEG/i);
+  });
+
+  it("White mode still reads 'Download white JPEG' (no regression)", () => {
+    const label = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
+    expect(label).toMatch(/Download white JPEG/i);
+  });
+
+  it("Transparent mode still reads 'Download transparent PNG' (no regression)", () => {
+    const label = primaryButtonLabel("transparent", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
+    expect(label).toMatch(/Download transparent PNG/i);
   });
 });

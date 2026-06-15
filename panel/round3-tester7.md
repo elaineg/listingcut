@@ -1,57 +1,14 @@
-# Round 3 — Tester 7: Jess Nakamura (freelance graphic designer, MacBook Pro / Chrome)
-
-## Prior concerns — re-checked first
-1. **No zoom/pan in Touch up — FIXED.** Scroll/pinch zoom works (I edited at 231% and 405%,
-   confirmed by the new "Reset zoom (405%)" button), there's a dedicated Pan tool, and the
-   helper text "Scroll or pinch to zoom · use Pan to move around" makes it discoverable.
-   Precisely erasing the stray leaf at the tiger's hind leg is now a 10-second job instead of
-   trial-and-error.
-2. **No dark-background preview — FIXED.** Touch up now has a "Preview background:
-   Checker / White / Dark" toggle. Dark instantly exposed the fur-edge fringe I used to only
-   find after export. Two caveats: it lives only inside Touch up (the main result view is
-   still checker+white only), and the dark view ghosts the original photo faintly behind the
-   cutout, so it's a fringe-spotting tool rather than a true final-output preview. Acceptable.
-3. **Hard-edged brush — FIXED.** Erase strokes now have visibly feathered, soft edges
-   (verified at 2x crop of the canvas); no more square-ish scallops against the AI mask.
-
-I verified edits persist: a max-size erase pass changed both the canvas, the main cutout
-preview, and the downloaded transparent PNG (byte-diff vs pre-edit baseline).
-
-## New issue found (minor)
-While in Touch up, clicking elsewhere — e.g. the photo's row in "Your photos" — exits and
-**silently discards all brush work**, no "discard changes?" prompt. I lost a full edit pass
-this way (the file-row button is even labeled "Done", same word as the save button). One
-confirm dialog would fix it.
-
-## Clarity — Yes
-Same 10-second pitch: "Free in-browser background remover that outputs marketplace-sized
-white-background JPEGs for eBay/Etsy/Poshmark/Depop; photos never upload anywhere." H1
-"Listing-ready product photos in your browser", the preset buttons, and the lock badge do
-all the work. Unchanged and still the clearest landing page I've tested on this panel.
-
-## Value — Yes
-Me personally: Photoshop Select Subject stays faster and cleaner on hair/whiskers, so I'm
-not switching. But for the small-business clients I evaluate tools for, this now beats the
-free alternatives outright: remove.bg free caps at ~0.25MP; this does full-res 1600×1600+
-exports, batch of 20 with ZIP, and a genuinely usable repair brush (zoom + soft edge + dark
-QA preview) with no signup. The whole reseller loop — cut, inspect on dark, fix, size,
-batch download — happens in one free tab.
-
-## Output quality
-Auto mask is the same model as rounds 1–2: whiskers still lost, faint semi-transparent
-patches on the foreleg/belly, leaf still attached pre-touch-up. The difference is the repair
-loop is now professional-feeling: zoom to 400%, soft erase, dark-bg check. That's the right
-trade for a free tool; I no longer hit a wall the tool can't recover from.
-
-## Advocacy — 9
-I said last round "add touch-up zoom and a dark preview and this is a 9 for the
-no-Photoshop crowd" — both shipped, and brush feathering came along too. I will bring this
-up unprompted next time a client asks about remove.bg or a Canva-Pro-only feature. Held off
-10 by: mask quality ceiling on fine detail (whiskers/hair — model-bound), dark preview not
-available on the final composite outside Touch up, and the silent discard-on-exit edge case.
-
+---
+NAME: Aisha
+CLARITY: Yes — H1 "Remove any background — keep your photo on this device" + subhead "clean cutout on white, your brand color, or transparent — free, no upload, no signup", and the cue line now reads "Headshots & avatars · ads & social · slides & mockups · marketplace listings" so my designer use cases lead and listings trail. Labeled White/Color/Transparent hero tiles seal it in <10s.
+VALUE: Yes — Square 1080×1080 is the neutral default, Slide 16:9 (1920×1080) and Custom are first-class under "GENERAL & SOCIAL", marketplaces sit in a separate de-emphasized group. Transparent PNG + margin slider gives me the exact deck/FigJam asset, no Photoshop, no signup. The side-by-side Original vs checkerboard preview lets me judge an edge before I download — that's a real time-saver over my round-trip to PS.
+ADVOCACY (1-10): 8 — back up from 7. I retested the exact thing I dinged: a real curly-hair portrait. The auto hair edge came back SOFT and feathered into transparency, not the hard-clipped silhouette I feared, and I saw no opaque background blob this pass. There's a faint soft halo on the wispiest top — short of remove.bg's matte, but disclosed and fixable. Not a 9 because the raw model edge is still the cap: for a high-res hero comp I'd still want a touch-up pass, and the team chose (defensibly) not to swap the model. But honesty + a soft (not jagged) edge + an obvious refine path is exactly how a considered tool should treat a model-bound limit.
+PRIOR CONCERNS ADDRESSED?: Yes — this is the crux. "Touch up" is a button sitting right on the result, with the microcopy "Hair or edges not perfect? Touch up to refine →" directly under it, plus the honest longer line "Use Touch up to fix spots the auto-cutout missed — erase leftover smudges or restore clipped edges." Setting expectations instead of over-promising is the right move; it converts my round-2 "defect" into a disclosed, one-click-fixable step. Combined with the actually-soft hair edge I saw this round, it offsets the limitation enough to move me back up.
+TOP FRICTION: The auto-cutout's soft fringe on fine hair is still the ceiling — fine for slides/social and now honestly framed, but I can't fully trust a one-shot export for a high-res hero without a touch-up pass. Nothing's broken; it's a quality cap I can live with, not a bug.
+WHAT WORKED: The honest, in-context Touch-up framing — it reframes a model limitation as a transparent, fixable step instead of a surprise, which is precisely how I want a craft tool to behave. Paired with the outcome-led preset grouping and the live before/after checkerboard, the whole result panel feels considered.
+---
 ```json
-{"tester": 7, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 9,
- "topComplaints": ["Leaving Touch up by clicking the photo row silently discards all brush edits — needs a confirm prompt", "Dark edge-check preview exists only inside Touch up and ghosts the original photo; no dark preview of the final export", "Auto-mask fine detail (whiskers, hair) still below paid tools — model-bound ceiling"],
+{"tester": 7, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 8,
+ "topComplaints": ["Auto-cutout soft fringe on fine hair is still the quality ceiling — fine for slides/social, not trustable one-shot for a high-res hero without a touch-up pass (model-bound)", "Edge quality unchanged by design — for top-tier output a refine pass is still required"],
  "priorConcernsAddressed": "all"}
 ```

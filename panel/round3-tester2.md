@@ -1,43 +1,13 @@
-# Panel round 3 — Tester 2 (Marcus Tran, full-time Poshmark/Depop seller, ~80 listings/wk, MacBook + Chrome)
-
-## Prior concerns — were they fixed?
-1. **Silent blank cutouts marked "Done" and zipped** — FIXED, and done right. I dropped 5 photos
-   (4 products + 1 flat near-blank). The flat one showed "Check this one — cutout looks nearly empty"
-   in the queue instead of "Done", AND the ZIP button updated to "Download all (ZIP) — 4 photos" —
-   the suspect photo is excluded from the ZIP but still has its own Download button if I want it.
-   Exactly the trust fix a 20-photo batch needs.
-2. **Can't append photos after a batch finishes** — NOT FIXED. After my batch completed there was
-   zero `input[type=file]` left on the page and no "Add more" text anywhere; the only path is still
-   "Start over", which wipes results. Same as round 2.
-3. **No padding/margin control** — FIXED. New "Margin — space around the product" slider (default 6%)
-   in the Marketplace export panel, with "Live preview · eBay 1600×1600" updating beside it.
-
-## Clarity — Yes
-Pitch to a friend, unchanged and accurate: "Drop up to 20 product photos, it strips backgrounds
-in-browser — nothing uploaded — and gives you a ZIP of white-bg JPEGs pre-sized and pre-named for
-eBay/Poshmark/Etsy/Depop. Free, no watermark, no account." The dropzone copy ("up to 20", "one-time
-~50 MB tool") and the new "Check this one" flag all read instantly. Nothing confused me.
-
-## Value — Yes
-Today: Photoroom free tier (watermark/upsell nags) + Canva. This beats both for volume work. 5-photo
-batch finished in 48s including the one-time model download; ZIP arrived as
-`listingcut-ebay-1600x1600.zip` with files like `item0-ebay-1600x1600.jpg` — no renaming. The blank
-flag means I can actually trust a big batch unattended now, and the margin slider kills my last
-Canva step (re-padding crops). I have already stopped opening Photoroom for this in spirit; this
-round removed the last reason to double-check its output.
-
-Remaining want: append photos to a finished batch — between items I either ZIP-and-start-over or
-plan batches per listing. Workable (each listing is its own batch anyway) but it's the one rough edge.
-
-## Advocacy — 10/10
-I asked for batch+ZIP in round 1, got it in round 2; asked for blank-result flagging and a margin
-control in round 2, got both here, implemented better than I specified (flagged photo auto-excluded
-from the ZIP). I already pitch tools like this unprompted in my reseller group and this is now the
-unambiguous rec: "free, no watermark, no login, 20 at a time, flags the duds, zips the rest." The
-missing append-to-batch is the only nit and it doesn't change what I'd tell people.
+---
+NAME: Marcus
+CLARITY: Yes — H1 "Remove any background — keep your photo on this device" + subhead "Drop a photo and get a clean cutout on white, your brand color, or transparent — free, no upload, no signup" and the "slides & mockups" line instantly tell a dev there's a transparent-PNG path for Storybook/README assets, not just a seller tool. The "Your photos never leave this device — everything runs in your browser" badge seals it. Nothing confused me.
+VALUE: Yes — verified a true RGBA PNG (sample-mug-cutout.png, 800×800, min-alpha 0 / max-alpha 254 = real transparency) with the cast shadow correctly stripped and the handle hole cut cleanly. Drag-dropped 2 of my own photos → 2/2 done in ~5s (model cached). Exactly the no-script, no-signup cutout I'd otherwise hand-roll; saves real time.
+ADVOCACY (1-10): 9 — the clearer first-load messaging earns the bump from my round-2 8. Across 3 cold fresh contexts (uncached ~50MB model) it showed working progress within 1.5s every time and reached an ENABLED Download in 9–11s with 0 console errors; the old export-panel render bug stays fixed. I'd post this in Slack unprompted. Not a 10 only because there's still a real ~50MB download gating the FIRST cutout — the copy fixes the interpretation, not the wait itself; a throttled teammate still waits.
+PRIOR CONCERNS ADDRESSED?: YES — materially improved, safe to share. The progress UI now shows TWO explicitly labeled steps ("1. Downloading model (one-time, ~50 MB)" → "2. Removing background… 9s") plus the prose "This is normal on first use — it only downloads once" and "Processing locally, nothing uploaded." The dropzone also warns up front: "First photo downloads a one-time ~50 MB tool — next photos take ~10 seconds each." Nothing reads as "stuck" anymore — a moving bar + a named phase from second one. This was the only thing keeping me off 9, and it's fixed.
+TOP FRICTION: The first cutout is still gated on a one-time ~50MB model download — well-explained now, but a slow-network teammate still feels the wait. Pre-warming/streaming the model on page load (or a smaller first-pass model) is the last thing between 9 and 10.
+WHAT WORKED: The two-step labeled progress with honest one-time-download copy — it turned the one thing that read as "broken" into something that reads as "working as intended." Result card (original vs checkerboard cutout, shadow removed, clean halo-free edges, inline Download + Touch up) remains excellent; neutral Square 1080×1080 default and grouped GENERAL & SOCIAL / MARKETPLACES presets are sensible. Zero CSS jank at 1280px.
+---
 
 ```json
-{"tester": 2, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 10,
- "topComplaints": ["Still can't append photos after a batch finishes — no file input remains, only Start over which wipes results"],
- "priorConcernsAddressed": "some"}
+{"tester": 2, "round": 3, "clarity": "Yes", "value": "Yes", "advocacy": 9, "topComplaints": ["First cutout still gated on a one-time ~50MB model download — explained clearly now, but the wait itself remains on slow networks"], "priorConcernsAddressed": "all"}
 ```

@@ -1,0 +1,5 @@
+PARKED 2026-06-15 (run 20260614-214221-daily, after 4 panel rounds) — deepen: Export background selector (White|Color|Transparent).
+Advocacy arc (fully-passing @ adv>=9 ∧ clarity ∧ value): R1 0/10 → R2 3/10 → R3 7/10 → R4 7/10 (plateaued).
+Final R4: Marcus 9, Wen 9, Tomás 9, Dana 10, Jules 9, Elena 9, Sam 9 (=7 at bar); Priya 8, Aisha 8, Rob 8.
+Clarity 10/10, Value 10/10. All functional bugs fixed; the NEW background feature was praised by all testers.
+WHY PARKED (not PASSED): the 9/10 bar is model-bound-unreachable. The 3 holdouts cap at an honest 8 on the underlying free in-browser @imgly model's fine-hair matting quality (Aisha/Rob design pros; Rob structural at batch volume) + Priya wanting a REAL-photo proof sample (an illustration won't prove it; a real one would re-expose the same hair clipping). Fixing requires a higher-quality model, which balloons the ~50MB download and breaks the free-client-side premise — correctly declined. Consistent with Elaine's prior STOP of listingcut's panel at 8/10.
