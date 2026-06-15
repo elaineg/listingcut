@@ -29,7 +29,7 @@ test.describe("round-4 static (no inference)", () => {
       })
     ).toBeVisible();
     // No Remove-shadow toggle before any photo is queued
-    await expect(page.getByLabel("Remove shadow", { exact: false })).not.toBeVisible();
+    await expect(page.getByLabel("Remove cast shadow", { exact: false })).not.toBeVisible();
   });
 
   test("friendly fetch-error copy appears when model CDN is blocked", async ({
@@ -51,7 +51,7 @@ test.describe("round-4 static (no inference)", () => {
 });
 
 test.describe("round-4 full flow (inference required)", () => {
-  test("Remove shadow toggle visible after upload; multi-preset ZIP via Sizes… popover", async ({
+  test("Remove cast shadow toggle visible after upload; multi-preset ZIP via Sizes… popover", async ({
     page,
   }) => {
     test.setTimeout(PROCESS_TIMEOUT + 240_000);
@@ -64,8 +64,8 @@ test.describe("round-4 full flow (inference required)", () => {
       timeout: PROCESS_TIMEOUT,
     });
 
-    // Remove shadow toggle is now visible (queue shown)
-    const removeShadowToggle = page.getByLabel("Remove shadow", { exact: false });
+    // Remove cast shadow toggle is now visible (queue shown)
+    const removeShadowToggle = page.getByLabel("Remove cast shadow", { exact: false });
     await expect(removeShadowToggle).toBeVisible();
     // Default ON per spec
     await expect(removeShadowToggle).toBeChecked();

@@ -279,35 +279,35 @@ describe("primaryButtonLabel — Color mode (round-8 panel-4 fix)", () => {
 });
 
 /* ---------------------------------------------------------------------------
- * Shadow: primaryButtonLabel "(with shadow)" qualifier (round 10).
+ * Shadow: primaryButtonLabel "(with drop shadow)" qualifier (round 10).
  * --------------------------------------------------------------------------- */
 
 describe("primaryButtonLabel — shadow qualifier", () => {
-  it("White mode with shadowOn=true appends '(with shadow)'", () => {
+  it("White mode with shadowOn=true appends '(with drop shadow)'", () => {
     const label = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false, true);
-    expect(label).toMatch(/Download white JPEG \(with shadow\)/i);
-    expect(label).toContain("(with shadow)");
+    expect(label).toMatch(/Download white JPEG \(with drop shadow\)/i);
+    expect(label).toContain("(with drop shadow)");
   });
 
-  it("Color mode with shadowOn=true appends '(with shadow)'", () => {
+  it("Color mode with shadowOn=true appends '(with drop shadow)'", () => {
     const label = primaryButtonLabel("color", "#1d4ed8", DIMS_1080, SQUARE_PRESET, false, true);
     expect(label).toContain("this background");
-    expect(label).toContain("(with shadow)");
+    expect(label).toContain("(with drop shadow)");
   });
 
-  it("Transparent mode with shadowOn=true does NOT append '(with shadow)' (shadow disabled in transparent mode)", () => {
+  it("Transparent mode with shadowOn=true does NOT append '(with drop shadow)' (shadow disabled in transparent mode)", () => {
     // When bgMode=transparent, caller should pass shadowOn=false (shadow inactive).
     // But even if called with true, the function itself does not add suffix for transparent.
     // (The current impl only adds suffix for white/color.)
     const label = primaryButtonLabel("transparent", "#ffffff", DIMS_1080, SQUARE_PRESET, false, true);
-    expect(label).not.toContain("(with shadow)");
+    expect(label).not.toContain("(with drop shadow)");
   });
 
   it("White mode with shadowOn=false (or omitted) has no suffix", () => {
     const withFalse = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false, false);
     const withOmitted = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, false);
-    expect(withFalse).not.toContain("(with shadow)");
-    expect(withOmitted).not.toContain("(with shadow)");
+    expect(withFalse).not.toContain("(with drop shadow)");
+    expect(withOmitted).not.toContain("(with drop shadow)");
     expect(withFalse).toMatch(/Download white JPEG/i);
     expect(withOmitted).toMatch(/Download white JPEG/i);
   });
@@ -315,7 +315,7 @@ describe("primaryButtonLabel — shadow qualifier", () => {
   it("exporting=true ignores shadowOn and returns 'Preparing JPEG…'", () => {
     const label = primaryButtonLabel("white", "#ffffff", DIMS_1080, SQUARE_PRESET, true, true);
     expect(label).toBe("Preparing JPEG…");
-    expect(label).not.toContain("(with shadow)");
+    expect(label).not.toContain("(with drop shadow)");
   });
 });
 

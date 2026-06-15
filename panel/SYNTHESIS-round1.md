@@ -1,85 +1,87 @@
-# ListingCut — Panel Synthesis, Round 1 (DEEPEN: export-background selector White|Color|Transparent)
-
-NOTE: This run REGENERATED the 10 panel profiles from the post-2026-06-12 ICP roster
-(computer-work pros — marketers, designers, PMs, engineers, data analysts, managers),
-REPLACING the old marketplace-seller personas used in prior rounds. Every tester here is a
-non-seller using a listing-framed tool — which is exactly why positioning dominates the
-findings below.
+# Add-shadow Panel — SYNTHESIS Round 1
 
 ## Score table
 
-| Name   | Role (ICP)             | Clarity | Value | Advocacy |
-|--------|------------------------|---------|-------|----------|
-| Priya  | Engineer (headshot)    | Yes     | No    | 6        |
-| Marcus | Dev (PNG assets)       | Yes     | Yes   | 5        |
-| Wen    | Data/reporting         | Yes     | Yes   | 7        |
-| Tomás  | Corp/IT (slides)       | Yes     | Yes   | 8        |
-| Dana   | Marketer (ads)         | Yes     | Yes   | 8        |
-| Jules  | Social marketer        | Yes     | Yes   | 8        |
-| Aisha  | Designer (slides/Fig)  | Yes     | Yes   | 8        |
-| Rob    | Designer (client)      | Yes     | Yes   | 7        |
-| Elena  | Manager (team photos)  | Yes     | Yes   | 7        |
-| Sam    | PM (decks)             | Yes     | Yes   | 7        |
+| # | Tester | Role | Clarity | Value | Advocacy |
+|---|--------|------|---------|-------|----------|
+| 1 | Priya | Engineer (occasional) | Yes | Yes | 8 |
+| 2 | Marcus | Frontend engineer | Yes | Yes | 8 |
+| 3 | Wen | Marketing data analyst | Yes | Yes | 8 |
+| 4 | Tomás | Operations analyst | Yes | Yes | 8 |
+| 5 | Dana | Marketer | Yes | Yes | 8 |
+| 6 | Jules | Content/community marketer | Yes | Yes | 7 |
+| 7 | Aisha | Designer | Yes | Yes | 8 |
+| 8 | Rob | Freelance brand designer | Yes | **Marginal** | 6 |
+| 9 | Elena | Engineering manager | Yes | Yes | 8 |
+| 10 | Sam | PM (mobile) | Yes | Yes | 8 |
 
-Result: **0/10 at the 9-advocacy bar.** Best = 8 (four testers). Clarity is universal
-(10/10 "Yes") — job legibility is solved. The ceiling is value-fit + one reliability bug.
+**Clarity: 10/10 Yes. Value: 9/10 Yes (Rob Marginal). Advocacy: median 8, range 6–8.**
+
+**Fully-passing (adv≥9 ∧ clarity=Yes ∧ value=Yes) = 0/10.**
+
+The new Add-shadow FEATURE itself was praised by every tester who judged it in isolation
+(Aisha "genuinely good", Rob "as a feature, that's a 9", Marcus/Tomás/Jules/Dana/Elena/Sam
+all called it the Photoroom-paid effect, free). NO ONE faulted the shadow rendering. The
+sub-9 scores are driven almost entirely by two FIXABLE feature-adjacent issues plus the
+known model ceiling — not by the shadow feature's quality.
+
+---
 
 ## Complaints grouped by cause
 
-### A. Reseller framing — DOMINANT, recurs across 9 of 10 personas
-Flagged by Priya, Marcus, Wen, Tomás, Dana, Jules, Aisha, Rob, Elena, Sam.
-The headline ("Listing-ready product photos"), the subhead (white-bg JPEG for
-eBay/Etsy/Poshmark/Depop/Facebook), ALL size presets, and the "Marketplace export" section
-title make every computer-work persona feel "this isn't for me." Concrete effects:
-- **Caveated recommendations** — the literal reason no one reaches 9: "I'd have to tell a
-  peer 'ignore the eBay stuff'" (Jules, Elena, Sam); "wouldn't bring it up unprompted to my
-  engineering peers" (Priya).
-- **The NEW background feature — the thing that broadens beyond sellers (brand-color
-  ads/social/decks, transparent slide/mock cutouts) — is INVISIBLE above the fold.** It only
-  appears AFTER processing. "I nearly bounced before discovering the color feature" (Dana);
-  "buried under seller framing — I'd never have known to come here for it" (Priya); "weak on
-  advertising that it even exists" (Dana); "'Marketplace export' label made me almost skip
-  the very feature that serves me" (Wen). This is the
-  added-feature-buried-panel-surfaces-not-function lesson in the wild.
-- Priya's lone value=No is downstream of framing: nothing signals people/headshot work, so
-  she won't trust the model on faces and won't bring it to her team.
+### A. NAMING / LABELING COLLISION — RECURRING (6 testers, dominant)
+Priya, Marcus, Wen, Dana, Elena, Sam.
+The app has a top cleanup control **"Remove shadow (auto-cleans cast shadows from cutouts)"**
+(default ON, strips the subject's cast shadow during matting) AND the NEW export
+**"Shadow"** toggle (adds a drop-shadow). Same word, opposite jobs, in different sections.
+Every one of the six "had to stop and reason about which is which"; Wen explicitly feared the
+new toggle would "re-add the thing Remove shadow just stripped." This is the single most
+recurrent complaint on the panel and is purely a copy fix. **REAL / dominant.**
 
-### B. Size presets all marketplace — recurs across 4 personas (Dana, Jules, Sam, Aisha; Wen adjacent)
-No social/marketing/presentation sizes; "Custom" is buried last after five seller presets,
-so non-sellers hunt or re-type every time. Specific asks:
-- LinkedIn / ad / email: 1200×627, 600px hero (Dana).
-- Social: 1080×1080 square, 1080×1920 Story (Jules).
-- Presentation 16:9 (Sam).
-- "A generic-design / Custom entry point would make me feel addressed" (Aisha, Wen, Sam).
+### B. DISCOVERABILITY / BURIAL — RECURRING (3–4 testers)
+Wen, Elena, Sam (and Dana "a touch buried below the color swatches").
+The new toggle landed at the very BOTTOM of the Export panel, below the size-preset grid and
+margin slider. Skimmers (Elena 20s budget, Sam came specifically for shadow) nearly missed
+the headline feature; on mobile (Sam) it's a long scroll past the result. The brief's intent
+was for it to nest with Background + Margin — the build placed it after the size grid
+instead. **REAL.** (Fix = placement only; do NOT add a banner / landing-density — documented
+added-feature-buried + landing-density friction.)
 
-### C. Download-button label lags / goes stale — recurs across 4 personas (Priya, Tomás, Sam; Wen adjacent)
-After switching to Color/hex the button still read "· white" for a beat or never updated
-(Tomás: "·white" never updated; Priya: lagged a beat; Sam: defaulted to white so "nothing
-happened"). For work assets this makes users stop and re-verify what they're exporting.
-**UX implication: the label MUST reflect the chosen background instantly.**
+### C. REAL STATE BUG — single tester, code fix (no UX decision)
+Rob: toggling Drop-shadow off→on then changing level reset the chosen brand hex back to the
+default beige on one export. Order-sensitive state reset. Builder fixes in code; noted here
+for completeness. **REAL (code), single-repro.**
 
-### D. Export panel intermittently never renders — Marcus (single-persona, but a hard bug → advocacy 5)
-On 4 of 6 sample runs the entire export panel (selector + presets + download) silently never
-appeared after the cutout completed — no spinner, no error. "Silent no-op is the worst
-failure mode — looks broken." Lowest advocacy on the panel. → P0 reliability bug to builder.
+### D. MODEL-MATTE CEILING — RECURRING but PARKED (do not fix)
+Aisha (purple/magenta edge fringing), Rob (green/cyan halo on saturated bg + fuzzy hair
+clipped to a smooth dome), Wen (faint blue edge fringe on high-contrast bg), Marcus/Elena
+(couldn't verify hair on their subjects). This is the free @imgly model's decontamination +
+hair limit, already documented as the honest ceiling in UX_BRIEF round 8. It is the sole
+driver of Rob's Value=Marginal/6 and a piece of Aisha's 8. **PARK — known ceiling, not
+addressable without swapping the model (breaks free + ~50MB bundle).**
 
-### E. State-loss quirks — single-persona each
-- Dana: choosing "Custom" size silently reset Export background Color → White, losing her
-  hex (re-doing the exact work she came to escape).
-- Jules: a size-chip tap silently got "eaten" (didn't register first try).
-- Rob: with one image there's no ZIP affordance and no signal that bg/size/margin apply to
-  ALL photos — batch-confidence gap for volume work.
+### E. PRE-EXISTING / OTHER — DEFERRED this round (not feature-related)
+- Jules (7): no batch ZIP / Download-all + per-batch shared settings. *(Note: Rob saw a
+  working 2-photo ZIP that carried settings — possible inconsistency, but this is a
+  pre-existing batch-scope gap, not the shadow feature. Deferred.)*
+- Tomás: privacy is a claim, wants a "works offline, disconnect to prove it" proof point;
+  ~50MB model download has no time estimate. *(Pre-existing trust/perf, deferred.)*
+- Dana: marketplace-first framing still briefly reads as "reseller tool." *(Pre-existing
+  framing — round-7 work; deferred.)*
+- Marcus: wants shadow angle/offset control (pro-grade). *(Scope creep; deferred.)*
+- Priya/Dana: live-preview shadow thumbnail too small / wants before-after shadow preview.
+  *(Single/double-tester polish, deferred — not a blocker.)*
+- Sam: long mobile single-column scroll between result and export controls. *(Partly
+  overlaps burial fix B; otherwise pre-existing layout, deferred.)*
 
-### F. Unproven on hard edges — recurs across 2 designers (Rob, Aisha; single-segment)
-Sample is a vector-clean mug ("easy mode"); they won't trust client deliverables until they
-see hair/fuzzy fabric survive. Not a round-1 reframing item — a credibility ceiling for the
-designer segment; note for future (a harder real-photo sample or a "try your own" nudge).
+---
 
-## Read for the iteration
-Clarity is done. The 9-bar is blocked almost entirely by ONE thing: the app reads as a
-seller-only tool, so 9/10 computer-work pros caveat their recommendation — and the very
-feature that serves them (color/transparent backgrounds) is hidden until after processing.
-Fix = reframe the landing to include non-sellers WITHOUT dropping the seller case (A),
-surface the background value prop above the fold (A), add a few non-seller presets + group
-them (B), make the download label instant (C) and the panel reliable (D). C/D/E go to the
-builder as bugs; A/B are the UX-brief reframing.
+## Verdict for the orchestrator
+0/10 fully pass. NO tester faulted the shadow feature's quality. Of the 10:
+- **6 sub-bar purely on the naming collision (A)** and **3–4 also on burial (B)** — both are
+  small, fixable copy + placement changes addressed in UX_BRIEF "Round-1 fixes" below.
+- **Rob (6) and part of Aisha (8) are the model-matte ceiling (D)** — PARK, do not chase.
+- The rest (E) are pre-existing non-feature gaps — defer; do not open this round.
+Fixing A + B (and the Rob state bug C) is the high-leverage round-2 move; the residual
+ceiling means this feature lands as an honest 8-class addition, consistent with the app's
+documented free-client-side ceiling.

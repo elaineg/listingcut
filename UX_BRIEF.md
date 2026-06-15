@@ -65,4 +65,56 @@ Friction this addresses: a new control dropped onto an already-dense panel keeps
 - **Live preview + label (synchronous, like background mode):** toggling Shadow or changing the intensity step updates the live composite preview IN THE SAME TICK as the change — the soft shadow appears/disappears/re-softens immediately, no submit. The primary download button reflects shadow state the same way it already reflects mode/size: when ON it reads e.g. **"Download white JPEG (with shadow) — 1080×1080 (Square)"**; when OFF it drops the "(with shadow)" qualifier. Label + preview must AGREE before the click, every time — consistent with the existing synchronous background-mode label rule (decision 4).
 - **Sticky:** Shadow on/off + chosen intensity persist across photos and "Start over" exactly like background mode/color/margin, and apply to both single export and "Download all (ZIP)."
 
+## Round-1 fixes (Add-shadow panel — naming + placement only; ceiling PARKED)
+Round-1 result: 0/10 fully pass; clarity 10/10, value 9/10. NO tester faulted the shadow
+feature itself. Sub-bar scores are driven by a naming collision (6 testers), the toggle's
+burial (3–4 testers), one state bug (Rob), and the known @imgly matte/hair ceiling (Rob 6,
+part of Aisha 8 — PARKED, do NOT touch). This section fixes ONLY the first three. Do NOT
+chase edge fringe / hair clipping (model limit), batch-ZIP scope, privacy proof-point,
+marketplace framing, or angle/offset controls — all deferred (see SYNTHESIS-round1.md).
+
+1. **Naming collision — exact final labels (the dominant blocker, 6 testers).** Two controls
+   share the word "shadow" with opposite jobs. The top control auto-cleans the subject's CAST
+   shadow during matting (default ON, removes a dark fringe under the subject). The new export
+   control ADDS a drop-shadow. Verified jobs from tester descriptions; rename BOTH so they can
+   never be confused:
+   - **NEW export control:** rename `Shadow` → **`Drop shadow`** (clearly additive; this is the
+     artifact Photoroom calls "instant shadow"). When ON, the download-button qualifier becomes
+     **`(with drop shadow)`** (was `(with shadow)`), e.g. "Download white JPEG (with drop
+     shadow) — 1080×1080 (Square)". The intensity segmented control stays `Soft · Medium ·
+     Strong`. Disabled-in-Transparent reason text becomes **"Drop shadow needs a solid
+     background (White or Color)."**
+   - **TOP cleanup control:** rename `Remove shadow (auto-cleans cast shadows from cutouts)`
+     → **`Remove cast shadow`** with helper text **"Cleans the dark shadow under your subject"**
+     (default ON, unchanged behavior). This keeps "shadow" only where the meaning is
+     "the original shadow in the photo," while the additive control owns the word "drop." The
+     two strings — "Remove cast shadow" vs "Drop shadow" — no longer collide on a fast read.
+     Rename is label/helper only; the cleanup logic is untouched (minimal/safe).
+
+2. **Discoverability — exact placement (3–4 testers; toggle was stranded under the size grid).**
+   The new toggle must NOT sit below the size-preset grid. Move it INTO the export-controls
+   cluster grouped with Background + Margin, in this exact order: (a) preset chips, (b) Export
+   background segmented control + inline color sub-controls, (c) Margin slider, (d) **Drop
+   shadow** toggle — immediately AFTER Margin, in the SAME row container / same indentation as
+   Background and Margin, NOT after the size grid and NOT in its own section. A returning user
+   reaching the Background+Margin block sees Drop shadow there without scrolling past the size
+   chips. Keep it the quietest, last item in the cluster (no new heading, no divider that reads
+   as a fresh section). Do NOT add a "New: drop shadow" banner or any landing-density element
+   (documented added-feature-buried + landing-density friction) — placement inside the existing
+   cluster is the entire fix.
+
+3. **State bug (code, no UX decision — for the builder).** Rob: toggling Drop shadow off→on then
+   changing intensity reset the chosen brand hex back to default beige on one export. Drop-shadow
+   on/off + intensity must be fully independent of background mode/color/hex — toggling shadow
+   must NEVER reset the entered hex or selected swatch. Sticky-state rule from decision 5 applies:
+   shadow state and color state persist independently across photos and "Start over".
+
+**Round-2 validator checks:** (a) the two controls read "Remove cast shadow" and "Drop shadow"
+— no two controls share the bare word "shadow"; (b) the Drop-shadow toggle appears directly
+after the Margin slider inside the export-controls cluster, above/within the Background+Margin
+group, NOT below the size grid, and is visible without extra scrolling once a user reaches that
+cluster; (c) download button reads "(with drop shadow)" when ON; (d) toggling Drop shadow does
+not reset the chosen hex/swatch; (e) no banner / landing-density was added; (f) shadow feature,
+intensity, sticky, and Transparent-disabled behaviors from "Add shadow" still intact.
+
 Carryover, still required: two-phase progress (model download with real percentage in EVERY path, then "Removing background…" with elapsed seconds), privacy line repeated during processing, live preset-composite preview rendering on 360px Android screens. Validator checks carried from round 4: cutouts come back free of stray blobs/smudges with no user action; cast shadows gone by default and a plain-words "Remove shadow" toggle (default ON) flips it back; export centers the subject (no top-left dead space); row thumbnails are larger and clickable into a full result; a "Sizes…" control lets one ZIP carry multiple presets; "Couldn't download… tap Retry" replaces "Failed to fetch"; "Add more photos" appends to a finished batch; exiting Touch up with unsaved strokes confirms before discarding; dropzone says "~10 seconds" per photo; no glued "ismarked" text. Carryover still required: per-photo Retry; "Check this one"; zoom/pan + feathered brush + preview-bg toggle; all five marketplaces in the subtitle; margin slider persists across photos. NEW for round 7 (neutralize the seller default — addresses the dominant R2 residual blocker, 6+ testers): (1) the preset chips lead with a NEUTRAL group FIRST (General & Social: Square/Story/Link-Ad/Slide 16:9/Custom) and Marketplaces SECOND — a cold non-seller does NOT scan past four resale sites to reach their size; (2) the DEFAULT selected preset is a neutral size (Square 1080×1080) so the live preview reads "Square 1080×1080" and the default download button reads "Square," NOT "(eBay)"; (3) ALL marketplace presets remain fully available and one tap away (seller case not regressed); (4) the "eBay's own photo guidelines" line is NOT the lone social-proof subline under the subhead — demoted to one neutral use-case item or beside the marketplace presets; (5) the use-case line leads with "Headshots & avatars" so a face/headshot user is explicitly addressed (Priya value=No); (6) margin help reads "Space around the subject," not "...product"; (7) a discoverable "Touch up to refine hair/edges" affordance sits prominently beside the result with honest expectations (no perfect-hair promise). Carryover from round 6: headline + subhead name the cutout-on-any-background OUTCOME; three background outcomes previewed above the fold BEFORE processing; section titled "Export background"; download-button label updates SYNCHRONOUSLY with mode/chip/swatch/hex (never stale "· white"); switching size preset (incl. Custom) does NOT reset background mode or hex; export-controls cluster reliably renders after every cutout (no silent no-op). Carryover from round 5: default White exports byte-for-byte like today; Color reveals inline swatches + native picker + #RRGGBB without pushing preview/queue off-screen; Color #FF0000 → red corner pixels at preset size respecting margin; Transparent → preset-sized PNG with alpha-0 corners; mode + color survive "Start over" and photo switches; ZIP bundles every photo in the active mode/color.

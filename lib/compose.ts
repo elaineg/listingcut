@@ -65,7 +65,7 @@ export function primaryButtonLabel(
   }
   const sizeStr = `${dims.w}×${dims.h}`;
   const marketStr = preset.label;
-  const shadowSuffix = shadowOn ? " (with shadow)" : "";
+  const shadowSuffix = shadowOn ? " (with drop shadow)" : "";
   if (bgMode === "white") {
     return `Download white JPEG${shadowSuffix} — ${sizeStr} (${marketStr})`;
   }

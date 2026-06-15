@@ -2021,7 +2021,7 @@ export default function Home() {
                 </p>
               ) : null}
 
-              {/* Remove shadow toggle — near the queue, quiet and plain-words */}
+              {/* Remove cast shadow toggle — near the queue, quiet and plain-words */}
               <div className="mt-3 flex items-center gap-2 text-sm text-slate-600">
                 <input
                   id="remove-shadow"
@@ -2031,8 +2031,8 @@ export default function Home() {
                   className="accent-sky-600"
                 />
                 <label htmlFor="remove-shadow" className="cursor-pointer select-none">
-                  Remove shadow{" "}
-                  <span className="text-slate-400">(auto-cleans cast shadows from cutouts)</span>
+                  Remove cast shadow{" "}
+                  <span className="text-slate-400">— Cleans the dark shadow under your subject</span>
                 </label>
               </div>
             </div>
@@ -2382,58 +2382,58 @@ export default function Home() {
                   {marginPct}%
                 </span>
               </label>
-            </div>
 
-            {/* (d) Shadow toggle — last, lowest-weight item in the cluster.
-                Disabled (greyed, NOT removed) when Background = Transparent.
-                Progressive disclosure: intensity control hidden while OFF. */}
-            <div className={`flex flex-wrap items-center gap-3 text-sm ${
-              bgMode === "transparent" ? "opacity-50" : ""
-            }`}>
-              <label className="flex items-center gap-2 cursor-pointer select-none text-slate-700">
-                <input
-                  type="checkbox"
-                  data-testid="shadow-toggle"
-                  checked={shadowOn}
-                  disabled={readyItems.length === 0 || bgMode === "transparent"}
-                  onChange={(e) => setShadowOn(e.target.checked)}
-                  className="accent-sky-600"
-                />
-                <span className="font-medium">Shadow</span>
-              </label>
-              {bgMode === "transparent" ? (
-                <span
-                  className="text-xs text-slate-400"
-                  role="status"
-                  aria-live="polite"
-                >
-                  Shadow needs a solid background (White or Color)
-                </span>
-              ) : shadowOn ? (
-                <div
-                  className="flex rounded-lg border border-slate-300 p-0.5"
-                  role="radiogroup"
-                  aria-label="Shadow intensity"
-                >
-                  {(["soft", "medium", "strong"] as const).map((step) => (
-                    <button
-                      key={step}
-                      type="button"
-                      role="radio"
-                      aria-checked={shadowIntensity === step}
-                      disabled={readyItems.length === 0}
-                      onClick={() => setShadowIntensity(step)}
-                      className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors disabled:cursor-not-allowed ${
-                        shadowIntensity === step
-                          ? "bg-sky-600 text-white"
-                          : "text-slate-600 hover:bg-slate-50"
-                      }`}
-                    >
-                      {step === "soft" ? "Soft" : step === "medium" ? "Medium" : "Strong"}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
+              {/* (d) Drop shadow toggle — immediately after Margin, same container/indentation.
+                  Disabled (greyed, NOT removed) when Background = Transparent.
+                  Progressive disclosure: intensity control hidden while OFF. */}
+              <div className={`flex flex-wrap items-center gap-3 text-sm ${
+                bgMode === "transparent" ? "opacity-50" : ""
+              }`}>
+                <label className="flex items-center gap-2 cursor-pointer select-none text-slate-700">
+                  <input
+                    type="checkbox"
+                    data-testid="shadow-toggle"
+                    checked={shadowOn}
+                    disabled={readyItems.length === 0 || bgMode === "transparent"}
+                    onChange={(e) => setShadowOn(e.target.checked)}
+                    className="accent-sky-600"
+                  />
+                  <span className="font-medium">Drop shadow</span>
+                </label>
+                {bgMode === "transparent" ? (
+                  <span
+                    className="text-xs text-slate-400"
+                    role="status"
+                    aria-live="polite"
+                  >
+                    Drop shadow needs a solid background (White or Color)
+                  </span>
+                ) : shadowOn ? (
+                  <div
+                    className="flex rounded-lg border border-slate-300 p-0.5"
+                    role="radiogroup"
+                    aria-label="Shadow intensity"
+                  >
+                    {(["soft", "medium", "strong"] as const).map((step) => (
+                      <button
+                        key={step}
+                        type="button"
+                        role="radio"
+                        aria-checked={shadowIntensity === step}
+                        disabled={readyItems.length === 0}
+                        onClick={() => setShadowIntensity(step)}
+                        className={`rounded-md px-3 py-1 text-xs font-semibold capitalize transition-colors disabled:cursor-not-allowed ${
+                          shadowIntensity === step
+                            ? "bg-sky-600 text-white"
+                            : "text-slate-600 hover:bg-slate-50"
+                        }`}
+                      >
+                        {step === "soft" ? "Soft" : step === "medium" ? "Medium" : "Strong"}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
