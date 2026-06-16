@@ -11,12 +11,15 @@ import {
   cleanMask,
   isNearEmpty,
   BG_COLOR_PRESETS,
+  GRADIENT_PRESETS,
+  DEFAULT_GRADIENT,
+  gradientLine,
   parseHex,
   resolveFill,
   primaryButtonLabel,
   SHADOW_PRESETS,
 } from "../lib/compose";
-import type { BgMode, ShadowIntensity } from "../lib/compose";
+import type { BgMode, ShadowIntensity, GradientSettings, GradientPresetId } from "../lib/compose";
 
 type Preset = {
   id: string;
@@ -187,6 +190,7 @@ async function applyMaskClean(
  *
  * fill:
  *   - hex string (e.g. "#ffffff", "#FF0000") → fill that color, export JPEG
+ *   - "gradient" sentinel → draw a linear gradient (requires gradientSettings param), export JPEG
  *   - null → transparent background, export PNG
  *
  * For White mode, pass "#ffffff" — byte-for-byte identical to the old compositeWhite.
@@ -194,6 +198,8 @@ async function applyMaskClean(
  * shadow: optional shadow options. Only applied when fill !== null (solid background).
  * The shadow is derived purely from the subject silhouette/alpha so it does not
  * depend on fine-hair matte quality.
+ *
+ * gradientSettings: required when fill === "gradient". Defines colorFrom, colorTo, angle.
  */
 export async function composite(
   cutoutUrl: string,
@@ -201,7 +207,8 @@ export async function composite(
   targetH: number,
   marginPct: number,
   fill: string | null,
-  shadow?: { blur: number; offsetX: number; offsetY: number; opacity: number } | null
+  shadow?: { blur: number; offsetX: number; offsetY: number; opacity: number } | null,
+  gradientSettings?: GradientSettings | null
 ): Promise<Blob> {
   const img = await loadImage(cutoutUrl);
   const src = document.createElement("canvas");
@@ -217,7 +224,18 @@ export async function composite(
   const ctx = out.getContext("2d")!;
 
   if (fill !== null) {
-    ctx.fillStyle = fill;
+    if (fill === "gradient" && gradientSettings) {
+      // Linear gradient fill using gradientLine math (angle → canvas endpoints).
+      // Endpoints are placed at ±halfDiag from center so gradient end-colors reach
+      // all four canvas corners — the corner pixels equal the gradient end-stops.
+      const { x0, y0, x1, y1 } = gradientLine(targetW, targetH, gradientSettings.angle);
+      const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+      grad.addColorStop(0, gradientSettings.colorFrom);
+      grad.addColorStop(1, gradientSettings.colorTo);
+      ctx.fillStyle = grad;
+    } else {
+      ctx.fillStyle = fill;
+    }
     ctx.fillRect(0, 0, targetW, targetH);
   }
   // For transparent (fill === null), we skip fillRect so the canvas stays transparent.
@@ -852,20 +870,37 @@ function BgModeSelector({
   onBgModeChange,
   onBgColorChange,
   disabled,
+  gradient,
+  gradientPresetId,
+  onGradientChange,
+  onGradientPresetChange,
 }: {
   bgMode: BgMode;
   bgColor: string;
   onBgModeChange: (m: BgMode) => void;
   onBgColorChange: (c: string) => void;
   disabled: boolean;
+  gradient: GradientSettings;
+  gradientPresetId: GradientPresetId | "custom";
+  onGradientChange: (g: GradientSettings) => void;
+  onGradientPresetChange: (id: GradientPresetId | "custom") => void;
 }) {
   const [hexField, setHexField] = useState(bgColor);
   const [hexInvalid, setHexInvalid] = useState(false);
+  // Local hex fields for gradient From/To — kept in sync with gradient prop.
+  const [gradFromField, setGradFromField] = useState(gradient.colorFrom);
+  const [gradToField, setGradToField] = useState(gradient.colorTo);
 
   // Keep hexField in sync when bgColor changes externally (e.g. restore from localStorage)
   useEffect(() => {
     setHexField(bgColor);
   }, [bgColor]);
+
+  // Keep gradient local fields in sync when gradient changes externally.
+  useEffect(() => {
+    setGradFromField(gradient.colorFrom);
+    setGradToField(gradient.colorTo);
+  }, [gradient.colorFrom, gradient.colorTo]);
 
   const handleHexFieldBlur = () => {
     const parsed = parseHex(hexField);
@@ -899,14 +934,52 @@ function BgModeSelector({
     }
   };
 
+  // Gradient helpers — MERGE into existing gradient so sibling fields are never reset.
+  const updateGradientFrom = (color: string) => {
+    onGradientChange({ ...gradient, colorFrom: color });
+    onGradientPresetChange("custom");
+  };
+  const updateGradientTo = (color: string) => {
+    onGradientChange({ ...gradient, colorTo: color });
+    onGradientPresetChange("custom");
+  };
+  const updateGradientAngle = (angle: number) => {
+    onGradientChange({ ...gradient, angle });
+    // Keep preset active if only angle changed and matches one of the presets.
+  };
+  const applyGradientPreset = (preset: typeof GRADIENT_PRESETS[number]) => {
+    onGradientChange({ colorFrom: preset.colorFrom, colorTo: preset.colorTo, angle: preset.angle });
+    onGradientPresetChange(preset.id);
+  };
+
+  // Build a small CSS gradient string for gradient preset swatch previews.
+  const swatchGradientStyle = (p: typeof GRADIENT_PRESETS[number]): React.CSSProperties => ({
+    background: `linear-gradient(${p.angle}deg, ${p.colorFrom}, ${p.colorTo})`,
+  });
+
+  // Active gradient swatch style (for the currently-applied gradient).
+  const activeSwatchStyle: React.CSSProperties = {
+    background: `linear-gradient(${gradient.angle}deg, ${gradient.colorFrom}, ${gradient.colorTo})`,
+  };
+
+  // Angle presets mapped to gradientLine() math (standard trig, not CSS):
+  //   Vertical (top→bottom): sin(90°)=1 drives Y → x-midline, y extends beyond top/bottom
+  //   Horizontal (left→right): cos(0°)=1 drives X → y-midline, x extends beyond left/right
+  //   Diagonal (TL→BR): cos(135°)=-cos45, sin(135°)=sin45 → TL→BR sweep
+  const ANGLE_PRESETS = [
+    { label: "Vertical",   angle: 90  },
+    { label: "Horizontal", angle: 0   },
+    { label: "Diagonal",   angle: 135 },
+  ] as const;
+
   return (
     <div className={`flex flex-col gap-2 ${disabled ? "opacity-50" : ""}`}>
       <div
-        className="flex rounded-lg border border-slate-300 p-0.5"
+        className="flex flex-wrap rounded-lg border border-slate-300 p-0.5"
         role="radiogroup"
         aria-label="Export background"
       >
-        {(["white", "color", "transparent"] as const).map((mode) => (
+        {(["white", "color", "gradient", "transparent"] as const).map((mode) => (
           <button
             key={mode}
             type="button"
@@ -928,7 +1001,7 @@ function BgModeSelector({
                 : "text-slate-600 hover:bg-slate-50"
             }`}
           >
-            {mode === "white" ? "White" : mode === "color" ? "Color" : "Transparent"}
+            {mode === "white" ? "White" : mode === "color" ? "Color" : mode === "gradient" ? "Gradient" : "Transparent"}
           </button>
         ))}
       </div>
@@ -999,6 +1072,147 @@ function BgModeSelector({
                 Invalid hex
               </span>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Gradient sub-controls — revealed inline like Color's hex picker */}
+      {bgMode === "gradient" && !disabled ? (
+        <div className="flex flex-col gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          {/* ~6 preset gradient swatches */}
+          <div className="flex flex-wrap items-center gap-2">
+            {GRADIENT_PRESETS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                title={p.label}
+                aria-label={`Gradient preset: ${p.label}`}
+                aria-pressed={gradientPresetId === p.id}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => applyGradientPreset(p)}
+                className={`h-7 w-14 rounded border-2 transition-transform hover:scale-105 ${
+                  gradientPresetId === p.id ? "border-sky-600 scale-105" : "border-slate-300"
+                }`}
+                style={swatchGradientStyle(p)}
+              />
+            ))}
+            {/* Custom indicator — shown when colors have been edited manually */}
+            {gradientPresetId === "custom" ? (
+              <span
+                className="h-7 w-14 rounded border-2 border-sky-600"
+                style={activeSwatchStyle}
+                title="Custom gradient"
+                aria-label="Custom gradient (active)"
+              />
+            ) : null}
+          </div>
+
+          {/* Custom two-color picker: From / To */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* From */}
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+              <span>From</span>
+              <input
+                type="color"
+                value={gradient.colorFrom}
+                aria-label="Gradient from color"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setGradFromField(v);
+                  updateGradientFrom(v);
+                }}
+                className="h-7 w-7 cursor-pointer rounded border border-slate-300 p-0"
+              />
+              <input
+                type="text"
+                value={gradFromField}
+                aria-label="Gradient from color hex"
+                maxLength={9}
+                placeholder="#RRGGBB"
+                onChange={(e) => {
+                  setGradFromField(e.target.value);
+                  const p = parseHex(e.target.value);
+                  if (p) updateGradientFrom(p);
+                }}
+                onBlur={() => {
+                  const p = parseHex(gradFromField);
+                  if (p) {
+                    setGradFromField(p);
+                    updateGradientFrom(p);
+                  } else {
+                    setGradFromField(gradient.colorFrom);
+                  }
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="w-20 rounded border border-slate-300 px-2 py-1 text-xs font-mono"
+              />
+            </div>
+            {/* To */}
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
+              <span>To</span>
+              <input
+                type="color"
+                value={gradient.colorTo}
+                aria-label="Gradient to color"
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setGradToField(v);
+                  updateGradientTo(v);
+                }}
+                className="h-7 w-7 cursor-pointer rounded border border-slate-300 p-0"
+              />
+              <input
+                type="text"
+                value={gradToField}
+                aria-label="Gradient to color hex"
+                maxLength={9}
+                placeholder="#RRGGBB"
+                onChange={(e) => {
+                  setGradToField(e.target.value);
+                  const p = parseHex(e.target.value);
+                  if (p) updateGradientTo(p);
+                }}
+                onBlur={() => {
+                  const p = parseHex(gradToField);
+                  if (p) {
+                    setGradToField(p);
+                    updateGradientTo(p);
+                  } else {
+                    setGradToField(gradient.colorTo);
+                  }
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                className="w-20 rounded border border-slate-300 px-2 py-1 text-xs font-mono"
+              />
+            </div>
+          </div>
+
+          {/* Angle presets */}
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="font-medium">Angle</span>
+            <div
+              className="flex rounded-lg border border-slate-300 p-0.5"
+              role="radiogroup"
+              aria-label="Gradient angle"
+            >
+              {ANGLE_PRESETS.map(({ label, angle }) => (
+                <button
+                  key={label}
+                  type="button"
+                  role="radio"
+                  aria-checked={gradient.angle === angle}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => updateGradientAngle(angle)}
+                  className={`rounded-md px-3 py-1 text-xs font-semibold transition-colors ${
+                    gradient.angle === angle
+                      ? "bg-sky-600 text-white"
+                      : "text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : null}
@@ -1112,6 +1326,8 @@ interface ExportPrefs {
   customH?: string;
   shadowOn?: boolean;
   shadowIntensity?: ShadowIntensity;
+  gradient?: GradientSettings;
+  gradientPresetId?: GradientPresetId | "custom";
 }
 
 export default function Home() {
@@ -1119,6 +1335,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
   const [downloadPct, setDownloadPct] = useState(0);
+  const [downloadEtaSecs, setDownloadEtaSecs] = useState<number | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   // SSR-safe defaults — values hydrated from localStorage in a useEffect below
@@ -1133,6 +1350,11 @@ export default function Home() {
   // Shadow: off by default; intensity defaults to "soft". Sticky like bgMode/bgColor.
   const [shadowOn, setShadowOn] = useState(false);
   const [shadowIntensity, setShadowIntensity] = useState<ShadowIntensity>("soft");
+  // Gradient: independent of bgMode/bgColor/margin/shadow — never re-initialized by sibling changes.
+  // sticky across photos + Start over (same persistence as bgMode/bgColor/margin/shadow).
+  const [gradient, setGradient] = useState<GradientSettings>(DEFAULT_GRADIENT);
+  // Track which built-in gradient preset is active ("custom" when pickers edited manually).
+  const [gradientPresetId, setGradientPresetId] = useState<GradientPresetId | "custom">("cool-blue");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFailed, setPreviewFailed] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -1162,6 +1384,9 @@ export default function Home() {
   const idRef = useRef(0);
   const itemsRef = useRef<QueueItem[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // ETA computation refs — track download start time and rolling byte rates.
+  const dlStartRef = useRef<number>(0);
+  const dlRateWindowRef = useRef<{ t: number; bytes: number }[]>([]);
   // Keep a ref to the current removeShadow value for use inside processItem without stale closure.
   const removeShadowRef = useRef(removeShadow);
 
@@ -1207,7 +1432,7 @@ export default function Home() {
           const prefs: ExportPrefs = JSON.parse(raw);
           if (prefs.presetId) setPresetId(prefs.presetId);
           if (typeof prefs.marginPct === "number") setMarginPct(clampMargin(prefs.marginPct));
-          if (prefs.bgMode && ["white", "color", "transparent"].includes(prefs.bgMode)) {
+          if (prefs.bgMode && ["white", "color", "gradient", "transparent"].includes(prefs.bgMode)) {
             setBgMode(prefs.bgMode as BgMode);
           }
           if (prefs.bgColor && parseHex(prefs.bgColor)) {
@@ -1218,6 +1443,17 @@ export default function Home() {
           if (typeof prefs.shadowOn === "boolean") setShadowOn(prefs.shadowOn);
           if (prefs.shadowIntensity && ["soft", "medium", "strong"].includes(prefs.shadowIntensity)) {
             setShadowIntensity(prefs.shadowIntensity as ShadowIntensity);
+          }
+          // Restore gradient — MERGE, never re-initialize (friction #19/#61 guard).
+          if (prefs.gradient && parseHex(prefs.gradient.colorFrom) && parseHex(prefs.gradient.colorTo)) {
+            setGradient({
+              colorFrom: parseHex(prefs.gradient.colorFrom)!,
+              colorTo: parseHex(prefs.gradient.colorTo)!,
+              angle: typeof prefs.gradient.angle === "number" ? prefs.gradient.angle : DEFAULT_GRADIENT.angle,
+            });
+          }
+          if (prefs.gradientPresetId) {
+            setGradientPresetId(prefs.gradientPresetId as GradientPresetId | "custom");
           }
         }
       } catch {
@@ -1234,15 +1470,21 @@ export default function Home() {
   // Persist sticky export prefs on every relevant change.
   // Guards against firing before the restore effect has had a chance to read
   // saved prefs (prefsLoaded ref is set true by the restore effect above).
+  // MERGE pattern: spread existing object so adding gradient fields NEVER clobbers
+  // any sibling field already in the object (friction #19/#61 guard).
   useEffect(() => {
     if (!prefsLoaded.current) return;
     try {
-      const prefs: ExportPrefs = { presetId, marginPct, bgMode, bgColor, customW, customH, shadowOn, shadowIntensity };
+      const prefs: ExportPrefs = {
+        presetId, marginPct, bgMode, bgColor, customW, customH,
+        shadowOn, shadowIntensity,
+        gradient, gradientPresetId,
+      };
       window.localStorage.setItem(LS_KEY, JSON.stringify(prefs));
     } catch {
       // quota or private mode
     }
-  }, [presetId, marginPct, bgMode, bgColor, customW, customH, shadowOn, shadowIntensity]);
+  }, [presetId, marginPct, bgMode, bgColor, customW, customH, shadowOn, shadowIntensity, gradient, gradientPresetId]);
 
   // Keep removeShadowRef in sync with state (no setState in effect body).
   useEffect(() => {
@@ -1269,8 +1511,12 @@ export default function Home() {
     async (item: QueueItem) => {
       updateItem(item.id, { status: "processing" });
       setDownloadPct(modelCachedRef.current ? 100 : 0);
+      setDownloadEtaSecs(null);
       setPhase(modelCachedRef.current ? "removing" : "downloading");
       setElapsed(0);
+      // Reset ETA tracking for this run.
+      dlStartRef.current = Date.now();
+      dlRateWindowRef.current = [];
       const startedAt = Date.now();
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = setInterval(() => {
@@ -1283,9 +1529,39 @@ export default function Home() {
         const config = {
           progress: (key: string, current: number, total: number) => {
             if (key.startsWith("fetch")) {
-              setDownloadPct(total > 0 ? Math.round((current / total) * 100) : 0);
-              if (total > 0 && current >= total) setPhase("removing");
+              const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+              setDownloadPct(pct);
+              if (total > 0 && current >= total) {
+                // Download done — clear ETA and move to removing phase.
+                setDownloadEtaSecs(null);
+                setPhase("removing");
+              } else if (total > 0 && current > 0) {
+                // Accumulate rate samples (bytes per ms) in a rolling 4-sample window.
+                const now = Date.now();
+                const elapsed_ms = now - dlStartRef.current;
+                // Only compute ETA after at least 1s of data to avoid wild spikes.
+                if (elapsed_ms >= 1000) {
+                  const window = dlRateWindowRef.current;
+                  window.push({ t: now, bytes: current });
+                  if (window.length > 4) window.shift();
+                  if (window.length >= 2) {
+                    const oldest = window[0];
+                    const newest = window[window.length - 1];
+                    const dt = newest.t - oldest.t;
+                    if (dt > 0) {
+                      const rate = (newest.bytes - oldest.bytes) / dt; // bytes/ms
+                      const remaining = total - current;
+                      if (rate > 0) {
+                        const etaMs = remaining / rate;
+                        const etaSecs = Math.max(1, Math.round(etaMs / 1000));
+                        setDownloadEtaSecs(etaSecs);
+                      }
+                    }
+                  }
+                }
+              }
             } else {
+              setDownloadEtaSecs(null);
               setPhase("removing");
             }
           },
@@ -1448,6 +1724,7 @@ export default function Home() {
   // When switching TO Color mode, default bgColor to beige (#F5F0E6) if it is
   // currently white — so the label and preview immediately differ from White mode.
   // Switching away from Color does not alter bgColor (it is remembered for next time).
+  // Switching away from Gradient does NOT change gradient state — it is sticky (friction #19/#61).
   const handleBgModeChange = useCallback(
     (mode: BgMode) => {
       if (mode === "color" && bgColor === "#ffffff") {
@@ -1480,7 +1757,10 @@ export default function Home() {
   const selectedCutoutUrl = selected?.cutoutUrl ?? null;
   const fill = resolveFill(bgMode, bgColor);
   // Shadow is only active when bg is solid (not transparent) and shadowOn is true.
+  // Gradient mode is solid (fill !== null when fill === "gradient"), so shadow works there too.
   const activeShadow = (fill !== null && shadowOn) ? SHADOW_PRESETS[shadowIntensity] : null;
+  // Gradient settings passed to composite only when bgMode === "gradient".
+  const activeGradient = bgMode === "gradient" ? gradient : null;
   useEffect(() => {
     if (!selectedCutoutUrl) return;
     let cancelled = false;
@@ -1493,7 +1773,8 @@ export default function Home() {
       Math.max(1, Math.round(h * scale)),
       marginPct,
       fill,
-      activeShadow
+      activeShadow,
+      activeGradient
     )
       .then((blob) => {
         if (cancelled) return;
@@ -1510,7 +1791,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCutoutUrl, presetId, customW, customH, marginPct, fill, shadowOn, shadowIntensity]);
+  }, [selectedCutoutUrl, presetId, customW, customH, marginPct, fill, shadowOn, shadowIntensity, gradient]);
 
   const downloadPng = useCallback(() => {
     if (selected?.cutoutBlob)
@@ -1525,15 +1806,18 @@ export default function Home() {
       const activeBgMode = overrideBgMode ?? bgMode;
       const activeBgColor = overrideBgColor ?? bgColor;
       const activeFill = resolveFill(activeBgMode, activeBgColor);
-      // Shadow: only when solid background and shadowOn is true.
+      // Shadow: only when solid background (fill !== null) and shadowOn is true.
+      // Gradient mode is solid (activeFill === "gradient" !== null), so shadow applies.
       const exportShadow = (activeFill !== null && shadowOn) ? SHADOW_PRESETS[shadowIntensity] : null;
-      const blob = await composite(item.cutoutUrl, w, h, marginPct, activeFill, exportShadow);
+      // Gradient: only pass when bgMode is "gradient"; keep sibling fields independent (friction #19/#61).
+      const exportGradient = activeBgMode === "gradient" ? gradient : null;
+      const blob = await composite(item.cutoutUrl, w, h, marginPct, activeFill, exportShadow, exportGradient);
       return {
         blob,
         filename: exportFilename(item.baseName, activeBgMode, activeBgColor, p.id, { w, h }),
       };
     },
-    [presetId, customW, customH, marginPct, bgMode, bgColor, shadowOn, shadowIntensity]
+    [presetId, customW, customH, marginPct, bgMode, bgColor, shadowOn, shadowIntensity, gradient]
   );
 
   const downloadExport = useCallback(
@@ -1615,6 +1899,7 @@ export default function Home() {
   const rowDownloadLabel = (item: QueueItem) => {
     if (bgMode === "transparent") return `Download ${item.name} as transparent PNG`;
     if (bgMode === "color") return `Download ${item.name} as JPEG`;
+    if (bgMode === "gradient") return `Download ${item.name} as gradient JPEG`;
     return `Download ${item.name} as white JPEG`;
   };
 
@@ -1623,6 +1908,8 @@ export default function Home() {
     ? `Transparent-background preview at ${preset.chip}`
     : bgMode === "color"
     ? `Color-background preview at ${preset.chip}`
+    : bgMode === "gradient"
+    ? `Gradient-background preview at ${preset.chip}`
     : `White-background preview at ${preset.chip}`;
 
   // The export controls cluster (preset chips, bg mode, margin) lives in the
@@ -1646,22 +1933,6 @@ export default function Home() {
           <p className="mx-auto mt-2 max-w-2xl text-sm text-slate-500">
             Headshots &amp; avatars · ads &amp; social · slides &amp; mockups · marketplace listings
           </p>
-          <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-4 py-1.5 text-sm font-medium text-emerald-800">
-            <svg
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-4 w-4"
-              aria-hidden="true"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 1a4.5 4.5 0 0 0-4.5 4.5V9H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-.5V5.5A4.5 4.5 0 0 0 10 1Zm3 8V5.5a3 3 0 1 0-6 0V9h6Z"
-                clipRule="evenodd"
-              />
-            </svg>{" "}
-            Your photos never leave this device — everything runs in your
-            browser
-          </div>
         </header>
 
         {/* Background-outcome preview — shown ABOVE THE FOLD before any processing (A) */}
@@ -1712,6 +1983,37 @@ export default function Home() {
         {/* Drop zone / queue / results */}
         <section className="mt-10">
           {items.length === 0 ? (
+            <>
+              {/* Privacy proof strip — pinned directly above the drop zone, full width.
+                  Consolidates the old header badge + old footer fine-print into ONE element.
+                  Net landing: exactly 2 informational elements near drop zone (this + 50MB note). */}
+              <div
+                className="mb-4 flex items-start gap-3 rounded-xl border border-sky-200 bg-sky-50/60 px-5 py-4"
+                role="note"
+                aria-label="Privacy proof"
+              >
+                {/* Shield glyph */}
+                <svg
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="mt-0.5 h-5 w-5 shrink-0 text-sky-600"
+                  aria-hidden="true"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M9.661 2.237a.531.531 0 0 1 .678 0 11.947 11.947 0 0 0 7.078 2.749.5.5 0 0 1 .479.435c.069.538.104 1.084.104 1.637 0 5.37-3.52 9.938-8.379 11.432a.5.5 0 0 1-.242 0C4.019 16.996.5 12.428.5 7.058c0-.553.035-1.099.104-1.637a.5.5 0 0 1 .48-.435 11.947 11.947 0 0 0 7.077-2.749Z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                <div>
+                  <p className="text-sm font-bold text-sky-900">
+                    Private by design — your photo never leaves this device.
+                  </p>
+                  <p className="mt-0.5 text-xs text-sky-800">
+                    100% in your browser. Don&apos;t take our word for it: turn on airplane mode — it still works. Or open the Network tab — zero image uploads.
+                  </p>
+                </div>
+              </div>
             <div
               role="button"
               tabIndex={0}
@@ -1857,6 +2159,7 @@ export default function Home() {
                 }}
               />
             </div>
+            </>
           ) : (
             <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
               <div className="flex items-center justify-between">
@@ -2049,50 +2352,86 @@ export default function Home() {
               </p>
 
               <div className="mt-6 space-y-5">
-                {/* Step 1: model download */}
+                {/* Step 1: model download — with counting-down ETA derived from observed bytes/sec */}
                 <div>
                   <div className="flex items-center justify-between text-sm font-medium">
+                    {phase === "removing" ? (
+                      /* Download finished — transition to "Almost there" */
+                      <span
+                        className="text-sky-700"
+                        aria-live="polite"
+                      >
+                        Almost there — removing background…
+                      </span>
+                    ) : (
+                      <span
+                        className={phase === "downloading" ? "text-sky-700" : "text-slate-400"}
+                      >
+                        1. Downloading model (one-time, ~50 MB)
+                      </span>
+                    )}
+                    {/* Percent + countdown ETA — ETA visible while downloading, hidden at 100% */}
                     <span
-                      className={
-                        phase === "downloading" ? "text-sky-700" : "text-slate-400"
+                      className="tabular-nums text-slate-500"
+                      aria-live="polite"
+                      aria-label={
+                        phase === "downloading" && downloadEtaSecs !== null
+                          ? `${downloadPct}% — ${downloadEtaSecs} seconds left`
+                          : phase === "removing"
+                          ? `${elapsed} seconds elapsed`
+                          : `${downloadPct}%`
                       }
                     >
-                      1. Downloading model (one-time, ~50 MB)
+                      {phase === "removing" ? (
+                        <>{elapsed}s</>
+                      ) : (
+                        <>
+                          {downloadPct}%
+                          {downloadEtaSecs !== null ? (
+                            <>{" "}<span aria-hidden="true">— ~{downloadEtaSecs}s left</span></>
+                          ) : null}
+                        </>
+                      )}
                     </span>
-                    <span className="tabular-nums text-slate-500">
-                      {downloadPct}%
-                    </span>
-                  </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
-                    <div
-                      className="h-full rounded-full bg-sky-500 transition-[width] duration-300"
-                      style={{ width: `${downloadPct}%` }}
-                    />
-                  </div>
-                </div>
-
-                {/* Step 2: inference */}
-                <div>
-                  <div className="flex items-center justify-between text-sm font-medium">
-                    <span
-                      className={
-                        phase === "removing" ? "text-sky-700" : "text-slate-400"
-                      }
-                    >
-                      2. Removing background…
-                    </span>
-                    <span className="tabular-nums text-slate-500">{elapsed}s</span>
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
                     {phase === "removing" ? (
+                      /* Inference: indeterminate bar */
                       <div className="h-full w-1/3 animate-[slide_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
-                    ) : null}
+                    ) : (
+                      <div
+                        className="h-full rounded-full bg-sky-500 transition-[width] duration-300"
+                        style={{ width: `${downloadPct}%` }}
+                      />
+                    )}
                   </div>
+                  {/* Reassurance line — stays constant during download, disappears at removing phase */}
+                  {phase === "downloading" ? (
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Setting up the one-time tool (~50 MB) — this happens once, then it&apos;s instant. You can keep this tab open.
+                    </p>
+                  ) : null}
                 </div>
+
+                {/* Step 2: inference label — kept as a secondary row when in download phase */}
+                {phase === "downloading" ? (
+                  <div>
+                    <div className="flex items-center justify-between text-sm font-medium">
+                      <span className="text-slate-400">
+                        2. Removing background…
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100" />
+                  </div>
+                ) : null}
               </div>
 
-              <p className="mt-6 text-center text-sm font-medium text-emerald-700">
-                Processing locally, nothing uploaded.
+              <p
+                className="mt-6 text-center text-sm font-medium text-emerald-700"
+                role="status"
+                aria-live="polite"
+              >
+                Still on your device — nothing uploaded.
               </p>
             </div>
           ) : null}
@@ -2220,7 +2559,7 @@ export default function Home() {
                           width={dims.w}
                           height={dims.h}
                           className="block h-auto w-full rounded-lg border border-slate-200 shadow-sm"
-                          style={bgMode === "transparent" ? CHECKERBOARD : { backgroundColor: "white" }}
+                          style={bgMode === "transparent" ? CHECKERBOARD : bgMode === "gradient" ? { background: `linear-gradient(${gradient.angle}deg, ${gradient.colorFrom}, ${gradient.colorTo})` } : { backgroundColor: "white" }}
                         />
                       ) : previewFailed ? (
                         <div className="flex aspect-square w-full items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-center text-xs text-slate-500">
@@ -2352,6 +2691,10 @@ export default function Home() {
                   onBgModeChange={handleBgModeChange}
                   onBgColorChange={setBgColor}
                   disabled={readyItems.length === 0}
+                  gradient={gradient}
+                  gradientPresetId={gradientPresetId}
+                  onGradientChange={(g) => setGradient(g)}
+                  onGradientPresetChange={(id) => setGradientPresetId(id)}
                 />
               </div>
 
@@ -2406,7 +2749,7 @@ export default function Home() {
                     role="status"
                     aria-live="polite"
                   >
-                    Drop shadow needs a solid background (White or Color)
+                    Drop shadow needs a solid background (White, Color, or Gradient)
                   </span>
                 ) : shadowOn ? (
                   <div
@@ -2440,8 +2783,7 @@ export default function Home() {
         </section>
 
         <footer className="mt-16 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
-          All processing happens in your browser with an open-source model —
-          your images are never uploaded to any server.
+          All processing runs in your browser with an open-source model.
         </footer>
       </div>
     </main>

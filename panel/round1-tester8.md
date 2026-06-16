@@ -1,56 +1,51 @@
-# Rob — Round 1
+# Rob — Brand/visual designer, freelance
 
-Freelance brand designer. I do cutout-on-exact-brand-hex grunt work weekly and my baseline
-is "I could do this in Photoshop (Select Subject) in ~4 min." I tested the new Shadow toggle
-but judged the whole tool, on a color-calibrated desktop, with a fuzzy-haired portrait + a
-product on busy backgrounds.
+**Cold open:** Loaded clean, 200, zero console errors across every interaction I threw at it.
 
-## 1. CLARITY — Yes
-Cold, I knew exactly what it does in 10 seconds: "Remove any background — keep your photo on
-this device," "clean cutout on white, your brand color, or transparent — free, no upload, no
-signup." The three example tiles (White/Color/Transparent) and the marketplace size presets
-(eBay/Etsy/Poshmark) make the audience obvious. No ambiguity, no jargon. This is the clearest
-part of the app.
+## Clarity — Yes (under 5s)
+The H1 "Remove any background — keep your photo on this device" plus the three preview
+tiles (White / Color / Transparent) told me exactly what this is before I read a word of
+body copy. Subline "free, no upload, no signup" and "Headshots & avatars · ads & social"
+nailed who it's for. I'd tell a friend: "Free in-browser background remover that drops
+your subject onto white, a brand color, a gradient, or transparent, then exports at the
+exact social/marketplace size — no login, runs locally." The "Private by design… turn on
+airplane mode" line is a nice trust flex for client-confidential assets.
 
-## 2. VALUE — Marginal (leaning No for client deliverables)
-The workflow ergonomics genuinely beat my Photoshop loop: I typed my brand hex #e5004c and it
-filled exactly; presets, margin, and a 2-photo batch ZIP all carried my background+shadow
-settings. For rough/internal comps or marketplace listings, that's faster than me.
-BUT my deliverable test is the edge, and that's where it loses to Photoshop. On a saturated
-brand red the cutout shows a green/cyan halo down the left of the head and a fringe on the
-shoulder — the old background bleeding into the matte. On a client file I'd have to fix that in
-PS anyway, which is the whole reason I'd have opened it. And every fuzzy hair strand got clipped
-to a smooth dome — Select Subject + Refine Hair keeps the flyaways; this doesn't. So it doesn't
-yet replace my PS step for paid work; it replaces it for throwaway/volume work.
+## Value — Yes (with one honest caveat)
+Today this is a Photoshop loop: open file, Select Subject, refine edge, fill layer with
+the brand hex (or build a gradient fill layer), crop to the platform's pixel size, export.
+~4 min per asset, more for a gradient. ListingCut did the mug cutout + a hex-precise
+diagonal gradient + 1080×1080 crop + JPEG in one screen, no re-entry. For volume social
+work (10–20 assets) the batch-of-20 + sticky settings is a genuine time win over my manual
+loop. Caveat: the sample is a hard-edged mug — edges were clean (tight around the handle,
+no halo). I have NOT yet stress-tested it on hair/fur against PS Select Subject, and I
+won't ship a client headshot until I do. So value is real for product/object/social work
+TODAY; hair-heavy deliverables stay "trust but verify."
 
-## 3. ADVOCACY — 6/10
-Two separate verdicts, because the brief asked me to split them:
-- The Shadow FEATURE is genuinely good: real soft directional drop-shadow, Soft/Medium/Strong
-  all visibly different, it rode into the batch ZIP, and the download button honestly labels it
-  "(with shadow) … #e5004c". Photoroom paywalls exactly this; here it's free and instant. As a
-  feature, that's a 9.
-- The MATTE quality drags the recommendation down. The fringe on saturated color and the
-  clipped hair mean I can't trust an export straight to a client, so the shadow sits on top of a
-  cutout I still have to clean. A great shadow on a fringed cutout is still a fringed cutout.
-I'd recommend it to a friend for quick listings/social/internal mocks ("free, no signup, decent
-shadow") but I'd explicitly warn "don't ship it to a client without checking the edges." That
-caveat is what keeps it off a 9.
+## GRADIENT mode — works, discoverable, brand-precise
+- Discoverable: 4th button right beside White/Color/Transparent in "Export background." Found it instantly.
+- On select it reveals exactly what was promised: 6 preset chips (soft gray, warm sunset,
+  cool blue, mint, peach, slate), From/To native color pickers + HEX TEXT inputs, and
+  Vertical/Horizontal/Diagonal angle.
+- The thing I care about most: I typed a real brand pair #FF6A00 → #1A1A2E, hit Diagonal.
+  The hex was retained EXACTLY (read back #ff6a00 / #1a1a2e — no rounding/munging), the live
+  preview updated, and the exported 1080×1080 JPEG showed the precise diagonal gradient
+  behind the cutout. This is the hex-precision I'd otherwise hand-build in PS.
+- Sticky: after Start over + re-running the sample, gradient stayed active with my #ff6a00
+  still loaded. Good — I don't want to re-enter brand colors per photo.
+- Nits: gradient looked a touch soft/banded at full size (fine for social, I wouldn't use
+  it as a hero print bg); and I'd love to save a custom gradient as a named brand preset so
+  I'm not re-typing two hexes per client. Minor.
 
-## What worked
-- Exact brand-hex background (#e5004c) applied precisely — my #1 need, nailed.
-- Shadow toggle + Soft/Medium/Strong, free, looks like a real photographic drop shadow.
-- 2-photo batch with a "Download all (ZIP)" that respects bg/size/shadow — real volume win.
-- Transparent PNG edge was clean; "never leave this device" is reassuring.
-
-## What held me back
-- Color-fringe halo (green/cyan) along the subject edge on saturated backgrounds = not
-  client-ready; I'd re-clean in Photoshop, defeating the time saving.
-- Fuzzy hair clipped to a solid dome — no flyaways; PS Refine Hair still wins.
-- Order-sensitive bug: when I toggled Shadow off→on then changed level, one export reverted to
-  the default beige instead of my chosen red hex. A clean top-to-bottom sequence held the hex,
-  but the toggle shouldn't reset my color.
+## Advocacy — 8/10
+I'd bring this up unprompted to other freelancers doing weekly social-asset grunt work —
+the hex-exact gradient + batch ZIP + no-signup genuinely beats my PS loop for volume.
+Not a 9 yet for two honest reasons: (1) I haven't confirmed edge quality on hair vs Select
+Subject, which gates client trust; (2) no saved/named brand-color presets, so repeat
+clients mean re-typing hexes. Fix the hair-edge confidence (or show a hair sample) and add
+custom-gradient saving and this is a 9.
 
 ```json
-{"tester": 8, "round": 1, "clarity": "Yes", "value": "Marginal",
- "advocacy": 6, "topComplaints": ["color-fringe halo on edges ruins client-deliverable quality on saturated brand colors", "fuzzy hair clipped to a smooth dome vs Photoshop Refine Hair", "shadow toggle sometimes reset my brand hex back to default beige on export"], "priorConcernsAddressed": "n/a"}
+{"tester": 8, "round": 1, "clarity": "Yes", "value": "Yes",
+ "advocacy": 8, "topComplaints": ["No way to SAVE a custom gradient/brand-color as a named preset — must re-type both hexes per client", "Edge quality unproven on hair/fur (sample is a hard-edged mug); won't trust for client headshots until verified vs PS Select Subject"], "priorConcernsAddressed": "n/a"}
 ```

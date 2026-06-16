@@ -104,7 +104,7 @@ test.describe("verify: bg-mode static (no inference)", () => {
     void subtitle;
   });
 
-  test("Export background selector: White/Color/Transparent present and disabled pre-upload", async ({
+  test("Export background selector: White/Color/Gradient/Transparent present and disabled pre-upload", async ({
     page,
   }) => {
     await page.goto("/");
@@ -112,13 +112,16 @@ test.describe("verify: bg-mode static (no inference)", () => {
     await expect(bgGroup).toBeVisible();
     const whiteBtn = bgGroup.getByRole("radio", { name: "White" });
     const colorBtn = bgGroup.getByRole("radio", { name: "Color" });
+    const gradientBtn = bgGroup.getByRole("radio", { name: "Gradient" });
     const transBtn = bgGroup.getByRole("radio", { name: "Transparent" });
     await expect(whiteBtn).toBeVisible();
     await expect(colorBtn).toBeVisible();
+    await expect(gradientBtn).toBeVisible();
     await expect(transBtn).toBeVisible();
     // Disabled before upload
     await expect(whiteBtn).toBeDisabled();
     await expect(colorBtn).toBeDisabled();
+    await expect(gradientBtn).toBeDisabled();
     await expect(transBtn).toBeDisabled();
     // White is default
     await expect(whiteBtn).toHaveAttribute("aria-checked", "true");

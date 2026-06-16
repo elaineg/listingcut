@@ -1,22 +1,44 @@
-# Dana — Round 1
+# Dana — Demand-gen marketer
 
-**1. CLARITY — Yes.** Headline "Remove any background — keep your photo on this device" plus the subline "white, your brand color, or transparent — free, no upload, no signup" told me the whole job in one read. The three preview tiles (White/Color/Transparent) with "ads & social" under Color spoke directly to me. The one snag: the page leads heavily marketplace — "marketplace listings," eBay/Etsy/Poshmark/Depop presets up front, "eBay's own photo guidelines..." — so for a beat I wondered "is this a reseller tool?" The "GENERAL & SOCIAL" preset row (Story, Link/Ad 1200×627, Slide 16:9) is what told me it's also for me. I'd lead with that group instead of marketplaces.
+**Round 1 · cold open · MacBook (1280px), mobile spot-check**
 
-**2. VALUE — Yes.** Today I cut out a product, round-trip into Canva, drop it on a brand-color frame at the right ad size, and re-do the hex every single time. Here it was one screen: pick Color, type my hex (#FF5A1F stuck, the field is literally labeled "Hex color value" with a #RRGGBB placeholder), pick Link/Ad 1200×627, hit download. The export even named the file `product-linkad-1200x627-ff5a1f.jpg` — that's the exact friction I keep redoing, gone. No Canva trip. The hex-by-field is the killer feature for me.
+## Clarity — Yes
+In 5 seconds I knew exactly what it is and that it's for me. The headline "Remove any
+background — keep your photo on this device" plus the subline "get a clean cutout on white,
+**your brand color**, or transparent — free, no upload, no signup" hit my exact job. The
+"ads & social" tag under the Color card sealed it. I'd tell a teammate: "Drop a product
+shot, get an instant cutout on our brand background at the right ad size, free, nothing
+uploaded." Nothing confused me.
 
-**3. ADVOCACY — 8/10.** I'd screenshot this into our team channel today. Not a 9–10 because: (a) the marketplace-first framing undersells it to marketers — I almost bounced thinking it wasn't for ads; (b) the Shadow control is a touch buried below the color swatches, and there's ALSO a "Remove shadow (auto-cleans cast shadows)" checkbox up top — two different "shadow" concepts on one screen made me pause about which does what. Once found, Shadow + Soft/Medium/Strong is genuinely polish I'd pay Photoroom for, and it's free here.
+## Value — Yes
+Today I round-trip through **Canva** (or Photoroom's paid background tool) to put a product
+shot on a brand-color or gradient background at LinkedIn/email sizes — and the hex-color
+step is the thing I redo by hand every campaign. This collapses it to: try sample → pick
+Gradient → type my two brand hexes → pick **Link/Ad 1200×627** → Download. It exported a
+real `sample-mug-linkad-1200x627.jpg` at exactly 1200×627. That is meaningfully faster than
+Canva, and the no-upload/no-signup angle is the part I'd screenshot for the team channel.
+The only thing keeping me from "I'll cancel a tool over this": the ~50MB one-time model
+download stalled my first run; on a cafe wifi that's a wince, though it's genuinely once.
 
-## What worked
-- Hex brand-color field + swatches, no Canva round-trip — solves my recurring step.
-- GENERAL & SOCIAL presets (Link/Ad 1200×627, Story, Slide 16:9) at real ad sizes.
-- Shadow toggle with Soft/Medium/Strong renders a real soft drop-shadow; export confirmed at correct dims.
-- "no upload, no signup," fast after the one-time model download; filename encodes preset+hex.
+## Advocacy — 8/10
+I'd bring this up unprompted in our marketing Slack. The GRADIENT feature is the unlock for
+me — Photoroom paywalls this. Held back from 9–10 by: (1) the first-load model download
+(slow + no progress reassurance beyond a %); (2) on a branded gradient the subject can blend
+into a same-hue corner — I'd want an optional subtle edge/shadow nudge so the product pops;
+(3) I batch real campaign sets, and I trust but didn't fully prove the gradient applies
+identically across a ZIP. Fix the cold-start friction and I'm at 9.
 
-## What held me back
-- Marketplace-heavy framing/presets make a marketer briefly think it's not for them.
-- Two "shadow" controls (export Shadow vs top "Remove shadow") are confusable.
-- My flat test image showed shadow only subtly; on a real product it'd pop more, but a before/after shadow preview would sell it harder.
+## GRADIENT mode — specific note
+- **Discoverable: Yes.** It's the 4th segment right beside White/Color/Transparent — one
+  click, no hunting. As a Photoroom user I instantly knew what it was.
+- **Clear: Yes.** Selecting it revealed 6 real gradient swatch chips, From/To hex fields
+  WITH native color pickers, and an Angle toggle (Vertical/Horizontal/Diagonal). The
+  download button relabels live to "Download JPEG on this gradient — 1200×627 (Link/Ad)" —
+  great that it confirms size + mode in one string.
+- **Worked: Yes.** Custom hexes #FF6B00→#7C3AED, Diagonal angle, Link/Ad preset all
+  composited into a correct 1200×627 JPEG. Clean cutout, smooth gradient, no console errors.
 
 ```json
-{"tester": 5, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8, "topComplaints": ["Marketplace-first framing/presets undersell it to ad/social marketers", "Two separate 'shadow' controls (export Shadow vs top 'Remove shadow') are confusable"], "priorConcernsAddressed": "n/a"}
+{"tester": 5, "round": 1, "clarity": "Yes", "value": "Yes",
+ "advocacy": 8, "topComplaints": ["~50MB one-time model download stalls first run on cafe wifi with only a % for reassurance", "subject can blend into a same-hue gradient corner — want an optional edge/shadow pop", "didn't see proof the chosen gradient applies identically across the batch ZIP"], "priorConcernsAddressed": "n/a"}
 ```

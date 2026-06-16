@@ -4,3 +4,7 @@ Holdouts: T8 (advocacy 4, value Marginal) and T9 (8, value Marginal) — both wa
 automatic mask cleanup on busy backgrounds (round-4 fix was mid-flight when stopped).
 Round-3 build promoted to production: https://listingcut.vercel.app
 Not a PASS; not eligible for further panel investment unless Elaine reopens it.
+
+NOTE 2026-06-16: superseded operationally by later Elaine-directed /add-feature deepens
+(drop-shadow PARKED 2026-06-15; gradient PARKED 2026-06-16). Each add-feature runs its own
+panel per the pipeline contract. See panel/PARKED for current state. Kept for the directive record.

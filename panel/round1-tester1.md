@@ -1,43 +1,13 @@
-# Priya — Round 1
+# Priya — Senior backend software engineer
 
-**CLARITY: Yes.** The H1 "Remove any background — keep your photo on this device" plus the
-green pill "Your photos never leave this device — everything runs in your browser" told me
-exactly what it does and answered my one objection before I had to ask. The subhead "free,
-no upload, no signup" is the line that made me actually stay. The three example tiles
-(White/Color/Transparent, with "headshots & avatars" under Transparent) told me my use case
-is covered. I knew how to start in well under 30s — one obvious drop zone.
+**Clarity: Yes.** Within 5 seconds I knew exactly what this is: "Remove any background — keep your photo on this device," subhead "Drop a photo and get a clean cutout on white, your brand color, or transparent — free, no upload, no signup." Three example tiles (White/Color/Transparent) make the output obvious. The line that actually earned my attention was the blue privacy callout: "Private by design — your photo never leaves this device… Don't take our word for it: turn on airplane mode… Or open the Network tab — zero image uploads." That's speaking my language.
 
-**VALUE: Yes (for my occasional case).** Today I either pay/trust remove.bg (upload my
-face to someone's server — no) or fight GIMP for 10 minutes. I confirmed in the network
-tab equivalent: across 3 full runs there were ZERO image-bearing POST/PUT requests, and the
-footer says so too. The model downloads once (~50MB) and processing was fast; cutout on my
-test portrait was clean. Got a real 1080×1080 JPEG out. For a conference bio / GitHub avatar
-on a solid color, this genuinely beats my current options. Not daily, but exactly right when
-I need it.
+**Value: Marginal (for me) / Yes (for the target).** Honest about my own profile: I need a clean headshot on a solid bg maybe twice a year, so it's not weekly-recurring for me — today I'd reach for `rembg` CLI or just crop in Preview. BUT the value is real and it cleared my single hard gate: I opened the network tab as the banner dared me to, ran the sample, and confirmed **zero POST/PUT requests — my image never left the browser.** The only external traffic was GETs to `staticimgly.com` pulling the ~50MB model weights, not my photo. That's the thing that would make me actually trust it over a random "free background remover" site that uploads to a server. Cutout quality on the sample mug was clean.
 
-**ADVOCACY: 8/10.** I'd bring it up to a peer who asked, and the "client-side, nothing
-leaves your machine" angle is the thing I'd lead with — that's the rare hook engineers trust.
-Held back from 9-10 by: (1) the SHADOW NAMING COLLISION — there's a "Remove shadow
-(auto-cleans cast shadows)" checkbox up top AND a separate "Shadow" (add drop-shadow) toggle
-in Export background. Same word, opposite jobs; I had to stop and reason about which was which.
-(2) The new Shadow toggle works (reveals Soft/Medium/Strong, and the download button relabels
-to "(with shadow)" — nice confirmation), but the live-preview thumbnail is small enough that
-the shadow is barely visible until you download. A larger preview would sell it.
+**Advocacy: 8/10.** I'd bring this up unprompted to a teammate who asks "how do I get a transparent avatar without uploading to some sketchy site" — the no-upload, network-tab-verifiable claim is the hook and it holds up. Not a 9/10 because: (1) the "airplane mode — it still works" claim is only true *after* the first-run model download; cold, it pulls 28 chunks from a third-party CDN, so my photo is private but my *usage* is visible to imgly — a precise skeptic notices the gap between the copy and the cold-start reality. (2) It's a low-frequency tool for me personally, so I wouldn't keep it bookmarked.
 
-## What worked
-- Privacy claim is real and verifiable (no egress) — decisive for me.
-- One-screen flow, obvious drop zone, fast after model load.
-- Marketplace + social size presets; download label states exactly what you'll get.
-- Shadow intensity (Soft/Medium/Strong) is a thoughtful touch Photoroom charges for.
-
-## What held me back
-- Two controls both named around "shadow" with opposite meanings — confusing.
-- Export live-preview thumbnail too small to judge the shadow before downloading.
-- Minor: clicking the top White/Color/Transparent tiles vs the Export-background toggle felt
-  like two ways to do the same thing; wasn't sure which was authoritative.
+**GRADIENT feature: loved it.** Fully discoverable — it's the 3rd chip in the Export "Background" segmented control (White / Color / **Gradient** / Transparent), no hunting. Selecting it instantly revealed all 6 preset swatches with the gradient rendered right inside each chip (Soft gray, Warm sunset, Cool blue, Mint, Peach, Slate), a From/To picker with BOTH native color inputs AND editable hex fields (e.g. `#bfdbfe` → `#1d4ed8`), and an Angle segmented toggle (Vertical/Horizontal/Diagonal). I picked Warm sunset then Cool blue + Diagonal and the live preview composited the gradient behind the mug correctly and updated immediately; the download button relabeled to "Download JPEG on this gradient." Clean, dense-but-not-cluttered, keyboard-reachable. Zero confusion. This is the one thing that would make me reach for it for a conference bio over a plain solid color.
 
 ```json
-{"tester": 1, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8,
- "topComplaints": ["'Remove shadow' (cleanup) vs 'Shadow' (add drop-shadow) share the same word, opposite meaning", "Export live-preview thumbnail too small to actually see the shadow before downloading"],
- "priorConcernsAddressed": "n/a"}
+{"tester": 1, "round": 1, "clarity": "Yes", "value": "Marginal", "advocacy": 8, "topComplaints": ["'Airplane mode still works' claim is only true after first-run; cold start pulls 28 chunks from third-party CDN staticimgly.com (usage visible to imgly, even though photo isn't)", "Low personal recurrence — a ~twice-a-year task for me, so I wouldn't keep it bookmarked"], "priorConcernsAddressed": "n/a"}
 ```

@@ -1,54 +1,43 @@
-# Elena — Round 1
+# Elena — Engineering manager (8 reports)
 
-Engineering manager, 8 reports, half my day in meetings. I'd reach for this only between
-calls — to drop a headshot on a clean background for a team page or an org-chart slide.
-30-second patience budget, laptop + phone.
+**Context:** Laptop, between meetings, 30-second patience budget. I'd open this when I need a
+headshot on a clean background for a team-page profile or an org-chart slide. Anything fiddly = gone.
 
-## 1. CLARITY — Yes
-Inside 5 seconds I'd tell a friend: "Drop a photo, it cuts out the background and hands you
-a clean cutout on white, a brand color, or transparent — free, in the browser, no login."
-The headline "Remove any background — keep your photo on this device", the "free, no upload,
-no signup" line, and the "Headshots & avatars" tag plus the three example tiles (White /
-Color / Transparent) told me instantly it covers MY use case, not just product listings.
-Nothing confused me.
+## Clarity — Yes
+In ~5 seconds I knew exactly what it is. The H1 "Remove any background — keep your photo on this
+device" plus the subline "Drop a photo and get a clean cutout on white, your brand color, or
+transparent — free, no upload, no signup" nailed it. The "Headshots & avatars" example tile (a
+person on a blue bg) is literally my use case. I'd tell a friend: "It cuts the background off a
+photo, free, right in your browser, no login — good for headshots and slides." The three preview
+tiles (White/Color/Transparent) sold it before I clicked anything.
 
-## 2. VALUE — Yes
-Today I do this the annoying way: ping a designer on Slack, or fight with the macOS Preview
-"remove background" (decent but no colored backdrop, no sizing) or remove.bg (makes me sign
-up / paywalls the good export). Here: dropped a headshot, model downloaded and the cutout
-was done in ~13 seconds total — comfortably inside my patience window — picked a Color
-background, flipped Shadow on, downloaded a 1080×1080 square. Zero setup, no account. That's
-genuinely faster than my current path and it's the exact artifact I need for a profile tile.
+## Value — Yes
+Today I either bug a designer on Slack, fumble with the macOS Preview/Keynote instant-alpha tool
+(hit or miss on hair edges), or hit remove.bg and bounce off the watermark/credit wall. This was a
+genuine zero-setup, sub-minute job: clicked "try the sample," waited for the one-time model, got a
+clean cutout, and exported. No account, no upload, no credits. For a between-meetings "I need this
+headshot on a slide NOW" moment, that's a real time save. The "Slide 16:9 (1920×1080)" export
+preset is a nice touch — that's exactly the size I'd drop into an org-chart deck.
 
-## What worked
-- Speed: first-photo model download + cutout finished in ~13s. The "~50 MB one-time tool,
-  next photos ~10s each" note set my expectation before I waited, so the wait didn't annoy.
-- The Shadow toggle is a trivially-obvious extra, NOT a fiddly distraction: one checkbox,
-  with Soft/Medium/Strong presets, and the download button relabels to "...(with shadow)".
-  The soft shadow on a beige background looked like something a designer would hand me —
-  this is the Photoroom-paid feature, free here.
-- Color picker with a hex field means I can match our actual brand color for the team page.
-- Mobile above-the-fold is clean and legible — I could do this from my phone between meetings.
+## GRADIENT note — discoverable, clear, worked
+I'd plausibly want a colored background, so I tried it. Gradient sits as the 4th chip in "Export
+background" right beside White/Color/Transparent — discoverable without hunting. Selecting it
+revealed all 6 named presets (Soft gray, Warm sunset, Cool blue, Mint, Peach, Slate — confirmed via
+their labels), a From/To custom hex picker, and Vertical/Horizontal/Diagonal angle buttons. The
+download button correctly updated to "Download JPEG with this gradient." It composed with the size
+presets. Clear and it worked first try. A subtle gray or slate gradient behind a headshot looks far
+more "team-page polished" than a flat color — this is the one feature that would make me pick this
+over a flat-color tool. No confusion, no errors.
 
-## What held me back
-- "Shadow" sits at the very bottom under a Margin slider and the size grid; on first pass I
-  didn't notice it was new or even there until I scrolled the whole export panel. A manager
-  skimming for 20 seconds would likely miss it.
-- Two different "shadow" controls coexist — a "Remove shadow" checkbox up top (cleans cast
-  shadows from the cutout) and the new "Shadow" toggle at the bottom (adds a drop shadow).
-  Same word, opposite jobs; for half a second I thought I'd toggled the wrong one.
-- Cutout edge around hair/shoulders softened slightly on my test image. For a polished
-  team-page headshot I'd want to eyeball it before trusting it — the "Touch up" button helps
-  but adds a step I don't have time for between meetings.
-
-## 3. ADVOCACY — 8/10
-I'd recommend it, and for a one-off headshot I'd reach for it again — it cleared the
-no-setup, no-signup, sub-30s bar that everything else fails. Not a 9–10 because my use is
-genuinely occasional (I'm not cutting out photos weekly), so it won't come up unprompted
-often; and the duplicate "shadow" wording plus the buried new toggle cost it polish. Fix
-the naming collision and surface Shadow nearer the background choice and it's a 9 for me.
+## Advocacy — 8/10
+I'd recommend it, and would bring it up the next time someone on my team asks "how do I get this
+headshot off its background for the wiki." What holds it back from 9–10: (1) the sample is a coffee
+mug, not a person — for a headshot-first user I had to take the hair-edge quality on faith; a face
+sample would close the sale. (2) The ~50MB one-time model download is invisible cost the first time
+— between meetings on a flaky conference-room wifi that could blow my 30s budget; a clearer "first
+photo: ~10–20s while a one-time tool loads" reassurance during the wait would help. Neither is a
+dealbreaker; the gradient feature actually nudged me up from a 7.
 
 ```json
-{"tester": 9, "round": 1, "clarity": "Yes", "value": "Yes",
- "advocacy": 8, "topComplaints": ["Two controls both say 'shadow' (Remove shadow vs Shadow) with opposite jobs — momentarily confusing", "New Shadow toggle is buried at the bottom of the export panel below the size grid; easy to miss", "Cutout edges softened around hair/shoulders; I'd want to verify before trusting for a team page"], "priorConcernsAddressed": "n/a"}
+{"tester": 9, "round": 1, "clarity": "Yes", "value": "Yes", "advocacy": 8, "topComplaints": ["Sample is a mug, not a face — headshot edge quality taken on faith", "One-time ~50MB model download is silent; risky on flaky meeting-room wifi within a 30s budget"], "priorConcernsAddressed": "n/a"}
 ```

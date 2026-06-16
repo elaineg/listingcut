@@ -1,87 +1,48 @@
-# Add-shadow Panel — SYNTHESIS Round 1
+# Run 20260616 gradient deepen — Round 1
 
-## Score table
+App: listingcut (local prod server http://localhost:3210)
+Feature under test: GRADIENT background mode (4th Background option: 6 preset chips, custom From/To hex + native pickers, vertical/horizontal/diagonal angle; composes with size/margin/shadow; sticky; applies to batch ZIP).
+Bar: advocacy ≥9 ∧ clarity=Yes ∧ value=Yes.
 
-| # | Tester | Role | Clarity | Value | Advocacy |
-|---|--------|------|---------|-------|----------|
-| 1 | Priya | Engineer (occasional) | Yes | Yes | 8 |
-| 2 | Marcus | Frontend engineer | Yes | Yes | 8 |
-| 3 | Wen | Marketing data analyst | Yes | Yes | 8 |
-| 4 | Tomás | Operations analyst | Yes | Yes | 8 |
-| 5 | Dana | Marketer | Yes | Yes | 8 |
-| 6 | Jules | Content/community marketer | Yes | Yes | 7 |
-| 7 | Aisha | Designer | Yes | Yes | 8 |
-| 8 | Rob | Freelance brand designer | Yes | **Marginal** | 6 |
-| 9 | Elena | Engineering manager | Yes | Yes | 8 |
-| 10 | Sam | PM (mobile) | Yes | Yes | 8 |
+## Per-tester verdicts
 
-**Clarity: 10/10 Yes. Value: 9/10 Yes (Rob Marginal). Advocacy: median 8, range 6–8.**
+| # | Persona | Clarity | Value | Advocacy | At bar? |
+|---|---------|---------|-------|----------|---------|
+| 1 | Priya — Sr backend SWE | Yes | Marginal | 8 | No |
+| 2 | Marcus — Frontend eng | Yes | Yes | 8 | No |
+| 3 | Wen — Marketing data analyst | Yes | Marginal | 6 | No |
+| 4 | Tomás — Ops analyst | Yes | Yes | 8 | No |
+| 5 | Dana — Demand-gen marketer | Yes | Yes | 8 | No |
+| 6 | Jules — Content/community marketer | Yes | Yes | 8 | No |
+| 7 | Aisha — Product designer | Yes | Yes | 8 | No |
+| 8 | Rob — Brand/visual designer | Yes | Yes | 8 | No |
+| 9 | Elena — Eng manager | Yes | Yes | 8 | No |
+| 10 | Sam — Product manager | Yes | Yes | 8 | No |
 
-**Fully-passing (adv≥9 ∧ clarity=Yes ∧ value=Yes) = 0/10.**
+**AT-BAR COUNT: 0/10.** Clarity 10/10 Yes. Value 8/10 Yes (Priya + Wen Marginal on personal frequency, not on quality).
 
-The new Add-shadow FEATURE itself was praised by every tester who judged it in isolation
-(Aisha "genuinely good", Rob "as a feature, that's a 9", Marcus/Tomás/Jules/Dana/Elena/Sam
-all called it the Photoroom-paid effect, free). NO ONE faulted the shadow rendering. The
-sub-9 scores are driven almost entirely by two FIXABLE feature-adjacent issues plus the
-known model ceiling — not by the shadow feature's quality.
+## Gradient feature reception (friction #39 — discoverability)
 
----
+Uniformly POSITIVE. Every tester who tried it found the gradient mode:
+- **Discoverable**: all 10 found it immediately as the 4th segment beside White/Color/Transparent — no one reported it as undiscoverable or confusing.
+- **Clear**: 6 labeled preset chips (rendered as real mini-gradient swatches per Aisha), From/To hex + native color pickers, and the angle control all read correctly.
+- **Worked**: testers verified real gradients baked into exported JPEGs at correct preset sizes (1080×1080, 1200×627) with custom brand hex pairs retained exactly (Rob #FF6A00→#1A1A2E, Dana #FF6B00→#7C3AED, Wen #7B2FF7); live preview composited correctly; download button relabeled to reflect the gradient; sticky across Start-over (Aisha, Rob); zero console errors reported by anyone.
+- Several said the gradient is precisely what NUDGED their score UP (Jules, Elena 7→8, Aisha). It is a net-positive feature, well received, not a blocker to advocacy.
 
-## Complaints grouped by cause
+## Holdbacks — classified
 
-### A. NAMING / LABELING COLLISION — RECURRING (6 testers, dominant)
-Priya, Marcus, Wen, Dana, Elena, Sam.
-The app has a top cleanup control **"Remove shadow (auto-cleans cast shadows from cutouts)"**
-(default ON, strips the subject's cast shadow during matting) AND the NEW export
-**"Shadow"** toggle (adds a drop-shadow). Same word, opposite jobs, in different sections.
-Every one of the six "had to stop and reason about which is which"; Wen explicitly feared the
-new toggle would "re-add the thing Remove shadow just stripped." This is the single most
-recurrent complaint on the panel and is purely a copy fix. **REAL / dominant.**
+### KNOWN STRUCTURAL CEILING (unrelated to gradients, unfixable in free-client-side premise — do NOT treat as gradient regressions)
+- **Free @imgly fine-hair MATTE quality / edge trust**: Aisha, Rob, (and Marcus, Elena, Priya echo it) — won't fully trust on hair/fur; only sample is a hard-edged mug so headshot edge quality is taken on faith. This is the documented ~honest-8 ceiling.
+- **~50MB one-time model download ETA / silent first-run wait**: Dana, Elena, Marcus, Priya — flagged the cold-start download as a wait/risk on flaky wifi. Pre-existing non-feature item (Tomás's classic item; here it surfaced via others too).
+- **Personal frequency mismatch**: Priya (twice-a-year → Value Marginal, adv 8), Wen (monthly, not weekly → Value Marginal, adv 6), Tomás/Elena (occasional). Audience-fit ceiling, not a defect.
+- Priya's extra skeptic nit: "airplane mode still works" copy is only true AFTER first-run model download (cold start pulls chunks from staticimgly.com CDN — photo private, usage visible). Copy-precision nit, pre-existing privacy-proof family, not a gradient issue.
 
-### B. DISCOVERABILITY / BURIAL — RECURRING (3–4 testers)
-Wen, Elena, Sam (and Dana "a touch buried below the color swatches").
-The new toggle landed at the very BOTTOM of the Export panel, below the size-preset grid and
-margin slider. Skimmers (Elena 20s budget, Sam came specifically for shadow) nearly missed
-the headline feature; on mobile (Sam) it's a long scroll past the result. The brief's intent
-was for it to nest with Background + Margin — the build placed it after the size grid
-instead. **REAL.** (Fix = placement only; do NOT add a banner / landing-density — documented
-added-feature-buried + landing-density friction.)
+### NEW gradient-adjacent items surfaced this round (minor polish; NOT advocacy-blocking — every gradient-trier still landed at 8, held back by the ceiling above, not by these)
+- **No save-as-preset for a custom brand gradient**: Jules, Aisha, Rob, Sam all independently want to save/name a two-hex brand gradient so they don't re-type hexes each session. Most-repeated gradient request (4 testers). Enhancement, not a bug.
+- **From/To default coupling (Wen)**: setting only "From" leaves "To" at the default blue, producing an unintended two-tone for a user who wanted a single brand hue. Minor UX nit (arguably "use Color mode for a single hue").
+- **Hex field ↔ native swatch echo (Sam)**: hex text field doesn't visibly echo a color picked via the native swatch — two color paths feel redundant/unsynced. Minor; Wen/Tomás/Rob reported From/To hex syncing fine, so this is a polish inconsistency, not a hard break.
+- **No proof gradient applies across the batch ZIP (Dana)**: she couldn't confirm in-session that the chosen gradient is applied identically to every image in the batch ZIP. (Spec says it does — this is a visibility/reassurance gap, not a confirmed failure.)
+- Minor: same-hue subject/gradient blend wanting an edge/shadow pop (Dana); angle limited to 3 presets, no arbitrary degree/radial (Aisha, Rob); no copy-to-clipboard (Jules).
 
-### C. REAL STATE BUG — single tester, code fix (no UX decision)
-Rob: toggling Drop-shadow off→on then changing level reset the chosen brand hex back to the
-default beige on one export. Order-sensitive state reset. Builder fixes in code; noted here
-for completeness. **REAL (code), single-repro.**
-
-### D. MODEL-MATTE CEILING — RECURRING but PARKED (do not fix)
-Aisha (purple/magenta edge fringing), Rob (green/cyan halo on saturated bg + fuzzy hair
-clipped to a smooth dome), Wen (faint blue edge fringe on high-contrast bg), Marcus/Elena
-(couldn't verify hair on their subjects). This is the free @imgly model's decontamination +
-hair limit, already documented as the honest ceiling in UX_BRIEF round 8. It is the sole
-driver of Rob's Value=Marginal/6 and a piece of Aisha's 8. **PARK — known ceiling, not
-addressable without swapping the model (breaks free + ~50MB bundle).**
-
-### E. PRE-EXISTING / OTHER — DEFERRED this round (not feature-related)
-- Jules (7): no batch ZIP / Download-all + per-batch shared settings. *(Note: Rob saw a
-  working 2-photo ZIP that carried settings — possible inconsistency, but this is a
-  pre-existing batch-scope gap, not the shadow feature. Deferred.)*
-- Tomás: privacy is a claim, wants a "works offline, disconnect to prove it" proof point;
-  ~50MB model download has no time estimate. *(Pre-existing trust/perf, deferred.)*
-- Dana: marketplace-first framing still briefly reads as "reseller tool." *(Pre-existing
-  framing — round-7 work; deferred.)*
-- Marcus: wants shadow angle/offset control (pro-grade). *(Scope creep; deferred.)*
-- Priya/Dana: live-preview shadow thumbnail too small / wants before-after shadow preview.
-  *(Single/double-tester polish, deferred — not a blocker.)*
-- Sam: long mobile single-column scroll between result and export controls. *(Partly
-  overlaps burial fix B; otherwise pre-existing layout, deferred.)*
-
----
-
-## Verdict for the orchestrator
-0/10 fully pass. NO tester faulted the shadow feature's quality. Of the 10:
-- **6 sub-bar purely on the naming collision (A)** and **3–4 also on burial (B)** — both are
-  small, fixable copy + placement changes addressed in UX_BRIEF "Round-1 fixes" below.
-- **Rob (6) and part of Aisha (8) are the model-matte ceiling (D)** — PARK, do not chase.
-- The rest (E) are pre-existing non-feature gaps — defer; do not open this round.
-Fixing A + B (and the Rob state bug C) is the high-leverage round-2 move; the residual
-ceiling means this feature lands as an honest 8-class addition, consistent with the app's
-documented free-client-side ceiling.
+## Read for go/no-go
+No NEW, FIXABLE, advocacy-BLOCKING gradient defect emerged. The gradient feature itself was a clean success — discoverable, clear, working, zero console errors, and it pushed several scores UP. The 0/10 at-bar is the SAME known structural ceiling listingcut always PARKs against (edge-quality matte trust + ~50MB download + audience frequency), now uniformly capping testers at 8 rather than the usual ~6-advocate split. The gradient-adjacent items (save-preset, From/To default, hex echo, batch-ZIP reassurance) are minor polish, none of which any tester named as the reason they withheld a 9.

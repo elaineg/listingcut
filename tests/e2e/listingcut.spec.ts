@@ -66,8 +66,12 @@ test.describe("UI shell (no inference)", () => {
     await expect(
       page.getByText("Drag & drop photos (up to 20) or click to upload")
     ).toBeVisible();
+    // Privacy proof strip: bold "never leaves this device" + verify cue
     await expect(
-      page.getByText(/Your photos never leave/i).first()
+      page.getByText(/never leaves this device/i).first()
+    ).toBeVisible();
+    await expect(
+      page.getByText(/airplane mode/i).first()
     ).toBeVisible();
     await expect(
       page.getByText("First photo downloads a one-time ~50 MB tool", {
@@ -75,7 +79,7 @@ test.describe("UI shell (no inference)", () => {
       })
     ).toBeVisible();
     await expect(
-      page.getByText("All processing happens in your browser", { exact: false })
+      page.getByText(/in your browser/i, { exact: false }).first()
     ).toBeVisible();
 
     // Success check 2: preset chips visible, disabled pre-cutout.

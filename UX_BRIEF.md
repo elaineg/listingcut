@@ -65,6 +65,50 @@ Friction this addresses: a new control dropped onto an already-dense panel keeps
 - **Live preview + label (synchronous, like background mode):** toggling Shadow or changing the intensity step updates the live composite preview IN THE SAME TICK as the change — the soft shadow appears/disappears/re-softens immediately, no submit. The primary download button reflects shadow state the same way it already reflects mode/size: when ON it reads e.g. **"Download white JPEG (with shadow) — 1080×1080 (Square)"**; when OFF it drops the "(with shadow)" qualifier. Label + preview must AGREE before the click, every time — consistent with the existing synchronous background-mode label rule (decision 4).
 - **Sticky:** Shadow on/off + chosen intensity persist across photos and "Start over" exactly like background mode/color/margin, and apply to both single export and "Download all (ZIP)."
 
+## Add Gradient background (additive — a 4th equal mode in the Background selector)
+Friction #39 (a feature added to a dense app ships UNDISCOVERABLE and burns panel rounds just
+surfacing it): Gradient must be first-class in the Background selector from the first paint, not
+a buried add-on. Friction #19/#61 (a new control writes the SAME shared export-settings object as
+color/margin/shadow): a naive handler that re-initializes the slice clobbers a sibling field —
+gradient state must be independent of margin/shadow/color and survive switching modes.
+
+- **Placement — a 4th equal chip:** the Export background selector becomes **White · Color ·
+  Gradient · Transparent** — four segmented options of EQUAL visual weight, in that order
+  (Gradient between Color and Transparent). White/Color/Transparent are visually UNCHANGED;
+  White stays selected by default so existing users see no change. Gradient (like the others) is
+  visible-but-disabled before a cutout exists with the same "drop a photo first" treatment.
+- **Progressive disclosure — mirror Color exactly:** selecting Gradient reveals its sub-controls
+  INLINE, right under/beside the segmented control, the same way Color reveals its hex picker —
+  and NOT before. The reveal contains, in one compact group: (1) **~6 preset gradient swatches**
+  (soft gray, warm sunset, cool blue, mint, peach, slate) rendered as little gradient chips you
+  tap; (2) a **custom two-color picker** — two #RRGGBB fields each paired with a native
+  `<input type="color">`, labeled simply "From" / "To"; (3) an **angle control** — vertical /
+  horizontal / diagonal preset buttons (a 0–360° slider is acceptable if it stays compact). The
+  active gradient shows as the selected swatch (or "Custom" when the pickers are edited). These
+  sub-controls expand IN PLACE and must NOT push the editable preview or the queue off-screen —
+  the preview stays visible while you pick (same constraint as Color). White/Color/Transparent
+  show no gradient sub-controls.
+- **Live preview — synchronous:** tapping a preset swatch, editing either custom color, or
+  changing the angle re-composites the live preview IN THE SAME TICK — the whole canvas behind
+  the centered subject fills with the gradient immediately, no submit. The primary download button
+  reads **"Download JPEG on this gradient — 1080×1080 (Square)"** while Gradient is active (with the
+  size/preset qualifier like the other modes), and label + preview must AGREE before the click.
+- **Composition (no surprises):** the gradient fills the WHOLE canvas behind the subject and
+  composes with the chosen preset SIZE and the Margin slider (subject stays centered at the chosen
+  margin). The existing **Drop shadow** toggle stays available in Gradient mode and renders the
+  soft shadow OVER the gradient, exactly as it does over a solid color — only Transparent disables
+  shadow.
+- **Sticky + independent (the friction #19/#61 guardrail):** the gradient choice — preset-or-custom,
+  both colors, and the angle — persists across photos and "Start over" exactly like background
+  mode / color / margin / shadow, and applies to BOTH single export AND "Download all (ZIP)" (every
+  photo gets the same gradient). Changing Margin, toggling Shadow, or switching Gradient→Color→
+  Gradient must NEVER reset the chosen gradient — each setting is independent; the mode switch
+  restores the previously-chosen gradient, not a default.
+- **5-second rule still holds:** the page still reads instantly as a background remover — Gradient
+  is one more quiet segmented option inside the existing export cluster, NOT a new banner, hero, or
+  landing-density element. Do not add any "New: gradients" badge. Discoverability comes from the
+  4th chip sitting co-equal in the Background selector, nothing more.
+
 ## Round-1 fixes (Add-shadow panel — naming + placement only; ceiling PARKED)
 Round-1 result: 0/10 fully pass; clarity 10/10, value 9/10. NO tester faulted the shadow
 feature itself. Sub-bar scores are driven by a naming collision (6 testers), the toggle's
@@ -108,6 +152,88 @@ marketplace framing, or angle/offset controls — all deferred (see SYNTHESIS-ro
    on/off + intensity must be fully independent of background mode/color/hex — toggling shadow
    must NEVER reset the entered hex or selected swatch. Sticky-state rule from decision 5 applies:
    shadow state and color state persist independently across photos and "Start over".
+
+## Prove privacy + keep first-load alive (additive — landing trust proof + download ETA)
+This round deepens the EXISTING landing + first-load only. Two changes: (1) turn the passive
+privacy line into a prominent, VERIFIABLE trust proof above the fold; (2) add a counting-down
+ETA to the one-time model download so first load feels alive, not frozen (panel holdout Tomás
+read percent+elapsed as "the page is broken"). No flow changes, no new banner stack.
+
+### (1) Privacy proof — one prominent, verifiable trust strip (NOT a 4th banner)
+Friction this addresses (added-feature-buried + landing-density): a privacy claim added to a
+dense landing ships as either invisible fine print OR yet another banner in a stack. The fix is
+CONSOLIDATION, not addition — there is ONE trust element on the landing, and it is the proof.
+
+- **Consolidation decision (exact):** the landing today carries (a) a fine-print privacy line
+  ("Your photos never leave this device") and (b) the pre-upload ~50 MB model disclosure. Merge
+  the privacy line INTO the new proof element and DELETE the standalone fine-print line — do not
+  keep both. The ~50 MB disclosure stays where it is (inside/under the drop zone, as pre-upload
+  copy), because it answers a different question (how long) and must not be swallowed by the
+  trust strip. Net result on the landing: exactly TWO informational lines near the drop zone —
+  the prominent privacy PROOF (trust) and the quiet ~50 MB timing note (expectation) — never a
+  3rd or 4th stacked banner.
+- **Placement (exact):** a single horizontal trust strip pinned DIRECTLY ABOVE the drop zone
+  (between the use-case line and the drop zone), full drop-zone width, so a cold visitor's eye
+  hits it on the way into the primary action. It is the ONE colored/bordered element in that
+  zone — the drop zone stays the visual hero; the strip is a confident supporting band, not a
+  competing card.
+- **Visual treatment:** a soft-tinted pill/band (cool accent at low saturation — e.g. slate or
+  the brand accent at ~8% fill) with a lock or shield glyph at the left, ONE line of bold proof
+  copy, and a smaller second line that is the verify instruction. Distinct enough to read as
+  "trust, proven," quiet enough not to shout over the drop zone. No red, no warning styling.
+- **Exact copy (two lines, both visible above the fold):**
+  - Line 1 (bold): **"Private by design — your photo never leaves this device."**
+  - Line 2 (smaller, the VERIFY affordance): **"100% in your browser. Don't take our word for it:
+    turn on airplane mode — it still works. Or open the Network tab — zero image uploads."**
+  - The verify line is the load-bearing part: a skeptic must be able to NAME how to check it in
+    5 seconds, not just read a claim. Keep both verification cues (offline + Network tab) — they
+    serve different skeptics (the casual user trusts "airplane mode," the engineer trusts the
+    Network tab).
+- **During processing (carryover, tightened):** the privacy reassurance repeats once, quietly,
+  beside the progress indicator — "Still on your device — nothing uploaded." — so the proof
+  holds through the one moment a user might fear an upload is happening.
+- **5-second test:** a stranger who never scrolls sees the strip, reads "never leaves this
+  device," AND can repeat back at least one way to verify it (airplane mode / Network tab).
+
+### (2) Download ETA — make the one-time download feel alive
+Friction this addresses (Tomás, holdout): percent + elapsed-seconds with NO remaining estimate
+read as a frozen page during the ~50 MB download. People tolerate a wait they can SEE shrinking.
+
+- **What shows during download (one compact indicator, not a new panel):**
+  - A progress bar plus a numeric percent (kept).
+  - NEW: a counting-DOWN remaining estimate beside the percent — **"~12s left"** — computed from
+    observed download rate (bytes-so-far ÷ elapsed → bytes/sec → remaining bytes ÷ rate). It
+    appears only once enough bytes have arrived to estimate a stable rate (suppress for the first
+    ~1s / until a sane number exists — never show "~0s left" or a wild "~600s left" spike); until
+    then show the reassurance line alone. Smooth the rate (rolling average) so the number ticks
+    DOWN steadily and doesn't jitter up and down.
+  - NEW: a steady one-line reassurance UNDER the bar: **"Setting up the one-time tool (~50 MB) —
+    this happens once, then it's instant. You can keep this tab open."** This is the "it's not
+    frozen" anchor; it stays constant while the percent/ETA move.
+- **Transition copy (download → inference, exact):** when the bar reaches 100%, the indicator
+  swaps the download line for **"Almost there — removing background…"** with the existing elapsed
+  seconds. The ETA string ("~Ns left") disappears at 100% (it's download-only); the reassurance
+  line is replaced by the "removing background" state so the user never sees a stale "downloading"
+  message after bytes finish.
+- **Applies in every path** including the bundled sample(s) — the first cold load of "Try the
+  sample" / "Try a headshot" shows the same download bar + ETA, since that's a user's true first
+  experience.
+- **5-second test:** within seconds of first load a user sees a number that is going DOWN ("left")
+  and a sentence telling them it's a one-time setup — first load reads as alive, not broken.
+
+### Round validator checks (privacy proof + ETA)
+- (a) ONE prominent privacy-proof strip sits directly above the drop zone, above the fold, with
+  bold "never leaves this device" copy AND a concrete self-verify cue (airplane mode and/or
+  Network tab) a stranger can name in 5 seconds.
+- (b) The old standalone fine-print privacy line is GONE (merged into the strip) — the landing
+  shows the proof strip + the ~50 MB timing note only, NOT a stack of 3+ banners.
+- (c) During the one-time download the indicator shows a counting-DOWN "~Ns left" alongside the
+  percent, derived from observed rate, that decreases on a cold load.
+- (d) A steady "this happens once / not frozen / keep the tab open" reassurance line is present
+  during download.
+- (e) At 100% the copy transitions to "removing background…" and the "~Ns left" string is gone.
+- (f) No regression: drop zone is still the hero, ~50 MB pre-upload disclosure intact, no new
+  landing banner clutter, all prior carryover (samples, neutral default, export cluster) intact.
 
 **Round-2 validator checks:** (a) the two controls read "Remove cast shadow" and "Drop shadow"
 — no two controls share the bare word "shadow"; (b) the Drop-shadow toggle appears directly

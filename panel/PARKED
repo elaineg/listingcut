@@ -1,5 +1,17 @@
-PARKED 2026-06-15 (run 20260614-214221-daily, after 4 panel rounds) — deepen: Export background selector (White|Color|Transparent).
-Advocacy arc (fully-passing @ adv>=9 ∧ clarity ∧ value): R1 0/10 → R2 3/10 → R3 7/10 → R4 7/10 (plateaued).
-Final R4: Marcus 9, Wen 9, Tomás 9, Dana 10, Jules 9, Elena 9, Sam 9 (=7 at bar); Priya 8, Aisha 8, Rob 8.
-Clarity 10/10, Value 10/10. All functional bugs fixed; the NEW background feature was praised by all testers.
-WHY PARKED (not PASSED): the 9/10 bar is model-bound-unreachable. The 3 holdouts cap at an honest 8 on the underlying free in-browser @imgly model's fine-hair matting quality (Aisha/Rob design pros; Rob structural at batch volume) + Priya wanting a REAL-photo proof sample (an illustration won't prove it; a real one would re-expose the same hair clipping). Fixing requires a higher-quality model, which balloons the ~50MB download and breaks the free-client-side premise — correctly declined. Consistent with Elaine's prior STOP of listingcut's panel at 8/10.
+PARKED 2026-06-16 (run 20260616-022644-daily) — deepen: GRADIENT background mode (4th Export bg option).
+Round 1, at bar (adv>=9 ∧ clarity=Yes ∧ value=Yes): 0/10. Clarity 10/10 Yes; Value 8/10 Yes.
+Per-tester (adv/clarity/value): Priya 8/Y/Marginal, Marcus 8/Y/Y, Wen 6/Y/Marginal, Tomás 8/Y/Y,
+Dana 8/Y/Y, Jules 8/Y/Y, Aisha 8/Y/Y, Rob 8/Y/Y, Elena 8/Y/Y, Sam 8/Y/Y.
+GRADIENT FEATURE: unanimous functional PASS — discoverable as the 4th Background segment (no #39
+confusion), presets/custom From-To hex/native pickers/angle all clear, real gradients baked into
+exported JPEGs at correct preset sizes with custom hex retained, live preview correct, sticky across
+Start-over, zero console errors. Several testers said gradient nudged their score UP (Jules, Elena,
+Aisha). NO new gradient defect; NO regression (White/Color/Transparent byte-for-byte unchanged,
+verifier-confirmed).
+WHY PARKED (not PASSED): the 9-bar is the app's documented MODEL-BOUND structural ceiling, unrelated
+to gradients and unfixable in the free-client-side premise — free @imgly fine-hair matte (Aisha/Rob/
+Elena), ~50MB silent first-run download (Dana/Elena/Marcus), audience frequency (Priya/Wen Marginal).
+Consistent with every prior listingcut PARK (7-8/10) + Elaine's 2026-06-13 STOP directive. Per friction
+#35/#36/#40, PARK rather than grind unmovable rounds. Shipped the verified improvement to prod.
+Minor polish backlog (non-blocking, 4 testers asked): save a custom brand gradient as a preset
+(localStorage); From-only edit leaves To at default blue; batch-ZIP gradient reassurance copy.
